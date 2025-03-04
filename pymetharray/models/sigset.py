@@ -204,7 +204,7 @@ class SigSet():
         """
         
         self.debug = debug
-        self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file        
+        self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file
 
         snps_read = {green_idat.n_snps_read, red_idat.n_snps_read}
         if len(snps_read) > 1:

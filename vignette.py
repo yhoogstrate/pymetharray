@@ -24,9 +24,9 @@ pytest tests
 from pathlib import Path
 
 
-import os
-if os.path.exists("/home/youri/.cache/pymetharray/HumanMethylationEPIC_manifest_v2.csv.gz"):
-    os.remove("/home/youri/.cache/pymetharray/HumanMethylationEPIC_manifest_v2.csv.gz")
+#import os
+#if os.path.exists("/home/youri/.cache/pymetharray/HumanMethylationEPIC_manifest_v2.csv.gz"):
+#    os.remove("/home/youri/.cache/pymetharray/HumanMethylationEPIC_manifest_v2.csv.gz")
 
 
 import logging
@@ -43,7 +43,6 @@ ss = SampleSheet("cache/", recursive=False)
 
 for sample in ss:
     print(" - Sample: "+str(sample))
-    #sample.set_export_filepath(Path("cache/203927450093_R01C01_processed.csv"))
 
 
 
@@ -63,10 +62,3 @@ for sample in ss:
     
     # )
 
-
-"""
-# should trigger error - and indeed it does
-for sample in ss:
-    print(" - Sample: "+str(sample))
-    sample.set_export_filepath(Path("cache/203927450093_R01C01_processed.csv"))
-"""

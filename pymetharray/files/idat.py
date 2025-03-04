@@ -21,6 +21,7 @@ from ..utils import (
     npread,
 )
 
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel( logging.INFO )
 
@@ -147,6 +148,7 @@ class IdatDataset():
         header_only:bool=False
     ):
         """Initializes the IdatDataset, reads and parses the IDAT file."""
+        self.filepath_or_buffer = filepath_or_buffer
         self.verbose = verbose
         self.channel = channel
         self.barcode = None
@@ -186,8 +188,10 @@ class IdatDataset():
         Returns:
             [boolean] -- If the IDAT file identifier matches the expected value
         """
+        
         idat_file.seek(IdatHeaderLocation.FILE_TYPE.value)
         file_type = read_char(idat_file, len(expected))
+        
         return file_type.lower() == expected.lower()
 
     @beartype
@@ -203,6 +207,7 @@ class IdatDataset():
         Returns:
             [boolean] -- If the IDAT file version matches the expected value
         """
+        
         idat_file.seek(IdatHeaderLocation.VERSION.value)
         idat_version = read_long(idat_file)
         return str(idat_version) == str(expected)
@@ -230,6 +235,17 @@ class IdatDataset():
             offsets[key] = read_long(idat_file)
 
         return offsets
+
+    @beartype
+    def get_probe_means(self, force:bool = True):
+        if self.probe_means is None:
+            if force:
+                with get_file_object(self.filepath_or_buffer) as idat_file:
+                    self.probe_means = self.read(idat_file, False)
+            else:
+                raise Exception("IDatDatset was read only shallow.")
+        
+        return self.probe_means
 
     def read(self, idat_file, header_only = False):
         """Reads the IDAT file and parses the appropriate sections. Joins the

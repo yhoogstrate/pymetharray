@@ -160,14 +160,17 @@ class Manifest():
         Returns:
             [PurePath] -- Path to the manifest file.
         """
+        
         dir_path = Path(MANIFEST_DIR_PATH).expanduser()
         if on_lambda:
             dir_path = Path(MANIFEST_DIR_PATH_LAMBDA).expanduser()
         filename = ARRAY_TYPE_MANIFEST_FILENAMES[array_type]
         filepath = Path(dir_path).joinpath(filename)
-
+        
+        
         if Path.exists(filepath):
             return filepath
+        
 
         LOGGER.info(f"Downloading manifest: {Path(filename).stem}")
         src_url = urljoin(MANIFEST_REMOTE_PATH, filename)

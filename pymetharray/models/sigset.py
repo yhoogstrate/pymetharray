@@ -113,14 +113,22 @@ def parse_sample_sheet_into_idat_datasets(sample_sheet, sample_name=None, from_s
 
 class SigSet():
     """
-    I’m gonna try to create a fresh methylprep “SigSet” to replace our methylationDataset and RawDataset objects, which are redundant, and even have redundant functions within them. Part of why I have been frustrated/confused by our code.
-    Central to the SeSAMe platform is the SigSet data structure, an S4 class with slots containing signals for six different classes of probes:
+    I’m gonna try to create a fresh methylprep “SigSet” to replace our methylationDataset and RawDataset objects,
+    which are redundant, and even have redundant functions within them. Part of why I have been frustrated/confused
+    by our code.
+    Central to the SeSAMe platform is the SigSet data structure, an S4 class with slots containing signals for six
+    different classes of probes:
+    
     [x] II - Type-II probes;
+    
     [x] IR - Type-I Red channel probes;
     [x] IG - Type-I Grn channel probes;
+    
     [x] oobG - Out-of-band Grn channel probes (matching Type-I Red channel probes in number);
     [x] oobR - Out-of-band Red channel probes (matching Type-I Grn channel probes in number);
+    
     [x] ctrl_green, ctrl_red - control probes.
+    
     [x] methylated, unmethylated, snp_methylated, snp_unmethylated
     [x] fg_green, fg_red (opposite of oobG and oobR) AKA ibG, ibR for in-band probes.
 
@@ -132,6 +140,7 @@ class SigSet():
     - avoids probes.py
         probe_type is a derived label, not in manifest (I, II, SnpI, SnpII, control)
     """
+    
     __bg_corrected = False
     __minfi_noob = False # linear_dye applied
     __dye_bias_corrected = False
@@ -188,11 +197,19 @@ class SigSet():
     }
     # after __init__, SigSet will have class variables for each of the keys in subsets above.
 
-    def __init__(self, sample, green_idat, red_idat, manifest, debug=False):
+    def __init__(self, sample, green_idat, red_idat, manifest, debug:bool=False):
         """ green_idat has .probe_means and .meta as main functions
         and for extra info, use extra kwargs:
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
         """
+        
+        #print("pre", green_idat.n_snps_read, red_idat.n_snps_read)
+        
+        #green_idat.get_probe_means() # ensure
+        #red_idat.get_probe_means() # ensure
+
+        #print("post", green_idat.n_snps_read, red_idat.n_snps_read)
+        
         self.debug = debug
         snps_read = {green_idat.n_snps_read, red_idat.n_snps_read}
         if len(snps_read) > 1:
@@ -204,21 +221,25 @@ class SigSet():
         #self.array_type = ArrayType.from_probe_count(self.n_snps_read)
 
         # these next two should be unnecessary, because nothing should be reading idats downstream; use self.data_channel instead
-        #self.green_idat = green_idat
-        #self.red_idat = red_idat
-        self.data_channel = {'GREEN': green_idat.probe_means, 'RED': red_idat.probe_means} # indexed to illumina_ids
+        self.data_channel = {
+            'GREEN': green_idat.get_probe_means(),
+            'RED':   red_idat.get_probe_means()} # indexed to illumina_ids
         # illumina_ids are all II means, plus a stacked list of type-I-AddressA and type-I-AddressB means
         self.sample = sample
         self.man = manifest.data_frame # relevant columns are 'probe_type', AddressA_ID, AddressB_ID, index, Color_Channel
         self.man = self.man[ ~self.man.index.str.startswith('rs') ] # snp_man covers these
         self.snp_man = manifest.snp_data_frame.set_index('IlmnID')
         self.ctl_man = manifest.control_data_frame
+        
+        
         self.ctrl_green = self.ctl_man.merge(
-            green_idat.probe_means.astype('float32'),
+            green_idat.get_probe_means().astype('float32'),
             how='inner', left_index=True, right_index=True)
         self.ctrl_red = self.ctl_man.merge(
-            red_idat.probe_means.astype('float32'),
+            red_idat.get_probe_means().astype('float32'),
             how='inner', left_index=True, right_index=True)
+        
+        
         self.array_type = manifest.array_type
         if self.array_type == ArrayType.ILLUMINA_MOUSE:
             self.mouse_probes_mask = ( (self.man['design'] == 'Multi')  | (self.man['design'] == 'Random') )

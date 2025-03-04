@@ -197,156 +197,153 @@ class SigSet():
     }
     # after __init__, SigSet will have class variables for each of the keys in subsets above.
 
-    def __init__(self, sample, green_idat, red_idat, manifest, debug:bool=False):
+    def __init__(self, green_idat, red_idat, manifest, shallow:bool = True, debug:bool = False):
         """ green_idat has .probe_means and .meta as main functions
         and for extra info, use extra kwargs:
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
         """
         
-        #print("pre", green_idat.n_snps_read, red_idat.n_snps_read)
-        
-        #green_idat.get_probe_means() # ensure
-        #red_idat.get_probe_means() # ensure
-
-        #print("post", green_idat.n_snps_read, red_idat.n_snps_read)
-        
         self.debug = debug
-        snps_read = {green_idat.n_snps_read, red_idat.n_snps_read}
-        if len(snps_read) > 1:
-            raise ValueError('IDAT files have a varying number of probes (comparing Grn to Red channel)')
-        if (str(green_idat.channel) != 'Grn' or str(red_idat.channel) != 'Red'):
-            raise ValueError("The IDAT files you supplied seem to be reversed. Check the order of your inputs to SigSet")
-        self.n_snps_read = snps_read.pop()
-        # DEBUG
-        #self.array_type = ArrayType.from_probe_count(self.n_snps_read)
-
-        # these next two should be unnecessary, because nothing should be reading idats downstream; use self.data_channel instead
-        self.data_channel = {
-            'GREEN': green_idat.get_probe_means(),
-            'RED':   red_idat.get_probe_means()} # indexed to illumina_ids
-        # illumina_ids are all II means, plus a stacked list of type-I-AddressA and type-I-AddressB means
-        self.sample = sample
-        self.man = manifest.data_frame # relevant columns are 'probe_type', AddressA_ID, AddressB_ID, index, Color_Channel
-        self.man = self.man[ ~self.man.index.str.startswith('rs') ] # snp_man covers these
-        self.snp_man = manifest.snp_data_frame.set_index('IlmnID')
-        self.ctl_man = manifest.control_data_frame
         
-        
-        self.ctrl_green = self.ctl_man.merge(
-            green_idat.get_probe_means().astype('float32'),
-            how='inner', left_index=True, right_index=True)
-        self.ctrl_red = self.ctl_man.merge(
-            red_idat.get_probe_means().astype('float32'),
-            how='inner', left_index=True, right_index=True)
-        
-        
-        self.array_type = manifest.array_type
-        if self.array_type == ArrayType.ILLUMINA_MOUSE:
-            self.mouse_probes_mask = ( (self.man['design'] == 'Multi')  | (self.man['design'] == 'Random') )
-        else:
-            self.mouse_probes_mask = None
-        self.address_code = {'AddressA_ID':'A', 'AddressB_ID':'B', 'A':'AddressA_ID', 'B':'AddressB_ID'}
-        """
-        ## SigSet EPIC
-        ##  - @IG probes: 49989 - 332 4145 70 7094 599 2958 ...
-        ##  - @IR probes: 92294 - 183 8040 1949 6152 833 89 ...
-        ##  - @II probes: 724612 - 6543 1596 3133 1011 3035 2837 ...
-        ##  - @oobG probes: 92294 - 138 277 107 218 232 80 ...
-        ##  - @oobR probes: 49989 - 1013 150 81 910 448 183 ...
-        ##  - @ctl probes: 635 ...
-        ##  - @pval: 866895 - 0.005141179 0.04914081 0.002757492 ...
+        if shallow:
+            self.idats = {"GREEN": green_idat, "RED": red_idat}
+        if not shallow:
+            snps_read = {green_idat.n_snps_read, red_idat.n_snps_read}
+            if len(snps_read) > 1:
+                raise ValueError('IDAT files have a varying number of probes (comparing Grn to Red channel)')
+            if (str(green_idat.channel) != 'Grn' or str(red_idat.channel) != 'Red'):
+                raise ValueError("The IDAT files you supplied seem to be reversed. Check the order of your inputs to SigSet")
+            self.n_snps_read = snps_read.pop()
+            # DEBUG
+            #self.array_type = ArrayType.from_probe_count(self.n_snps_read)
 
-        SigSet 450k
-        @II 350076 ................... methylated   485512
-        @IG 46298 ... oobR 46298 ..... unmethylated 485512
-        @IR 89203 ... oobG 89203 ..... snp_methylated   65
-        .............................. snp_unmethylated 65
-        fg_green 396325 |vs| ibG 396374 (incl 40 + 9 SNPs)  --(flattened)--> 442672
-        fg_red   439223 |vs| ibR 439279 (incl 40 + 16 SNPs) --(flattened)--> 528482
-        """
+            # these next two should be unnecessary, because nothing should be reading idats downstream; use self.data_channel instead
+            self.data_channel = {
+                'GREEN': green_idat.get_probe_means(),
+                'RED':   red_idat.get_probe_means()} # indexed to illumina_ids
+            # illumina_ids are all II means, plus a stacked list of type-I-AddressA and type-I-AddressB means
+            #self.sample = sample
+            self.man = manifest.data_frame # relevant columns are 'probe_type', AddressA_ID, AddressB_ID, index, Color_Channel
+            self.man = self.man[ ~self.man.index.str.startswith('rs') ] # snp_man covers these
+            self.snp_man = manifest.snp_data_frame.set_index('IlmnID')
+            self.ctl_man = manifest.control_data_frame
+            
+            
+            self.ctrl_green = self.ctl_man.merge(
+                green_idat.get_probe_means().astype('float32'),
+                how='inner', left_index=True, right_index=True)
+            self.ctrl_red = self.ctl_man.merge(
+                red_idat.get_probe_means().astype('float32'),
+                how='inner', left_index=True, right_index=True)
+            
+            
+            self.array_type = manifest.array_type
+            if self.array_type == ArrayType.ILLUMINA_MOUSE:
+                self.mouse_probes_mask = ( (self.man['design'] == 'Multi')  | (self.man['design'] == 'Random') )
+            else:
+                self.mouse_probes_mask = None
+            self.address_code = {'AddressA_ID':'A', 'AddressB_ID':'B', 'A':'AddressA_ID', 'B':'AddressB_ID'}
+            """
+            ## SigSet EPIC
+            ##  - @IG probes: 49989 - 332 4145 70 7094 599 2958 ...
+            ##  - @IR probes: 92294 - 183 8040 1949 6152 833 89 ...
+            ##  - @II probes: 724612 - 6543 1596 3133 1011 3035 2837 ...
+            ##  - @oobG probes: 92294 - 138 277 107 218 232 80 ...
+            ##  - @oobR probes: 49989 - 1013 150 81 910 448 183 ...
+            ##  - @ctl probes: 635 ...
+            ##  - @pval: 866895 - 0.005141179 0.04914081 0.002757492 ...
 
-        if debug: print('DEBUG comparing [manifest probe_IDs vs idat probe_means]')
+            SigSet 450k
+            @II 350076 ................... methylated   485512
+            @IG 46298 ... oobR 46298 ..... unmethylated 485512
+            @IR 89203 ... oobG 89203 ..... snp_methylated   65
+            .............................. snp_unmethylated 65
+            fg_green 396325 |vs| ibG 396374 (incl 40 + 9 SNPs)  --(flattened)--> 442672
+            fg_red   439223 |vs| ibR 439279 (incl 40 + 16 SNPs) --(flattened)--> 528482
+            """
 
-        for subset, decoder_parts in self.subsets.items():
-            data_frames = {}
-            for part in decoder_parts:
-                i = self.idat_decoder.loc[part]
-                ref = self.snp_man.copy() if i['snp'] == 1 else self.man.copy()
-                # can't merge on NAType, so filling in -1s. No probe_means illumina_ids will match -1
-                # using -1 instead of NaN throughout solves a lot of problems!
-                if ref['AddressA_ID'].isna().sum() > 0:
-                    ref.loc[:, 'AddressA_ID'].fillna(-1, inplace=True)
-                if ref['AddressB_ID'].isna().sum() > 0:
-                    #ref.loc[ (ref['AddressB_ID'].isnull()), 'AddressB_ID'] = -1
-                    ref.loc[:, 'AddressB_ID'].fillna(-1, inplace=True)
-                # and pandas won't compare NaN to NaN... so need this extra color_channel filter
-                color_channel = ref['Color_Channel'].isna() if i['Color_Channel'] is None else (ref['Color_Channel'] == i['Color_Channel'])
-                probe_ids = ref[ (ref['Infinium_Design_Type'] == i['Infinium_Design_Type']) & (color_channel) ][i['probe_address']]
-                probe_means = self.data_channel[i['data_channel']] # starts with all 361821 mouse probes here, keyed to illumina_ids
-                probe_means = probe_means.reset_index() # index is Nth row; illumina_id now a column that can be redundant
-                probe_means = probe_means[ probe_means.illumina_id.isin(probe_ids) ]
-                if len(probe_ids) == 0:
-                    LOGGER.error(f"SigSet.init(): no probes matched for {subset}:{part}")
-                #************ DEBUG ***********#
-                if debug:
-                    #print(f"DEBUG duplicated probe_ids (from manifest): {len( probe_ids[probe_ids.duplicated(keep=False)] )}")
-                    duped = len( probe_ids[probe_ids.duplicated(keep=False)] )
-                    dupe_msg = f"-- {duped} multiprobes" if duped != 0 else ''
-                    means_msg = probe_means.shape if probe_means.shape[0] != probe_ids.shape[0] else 'OK'
-                    print(f"DEBUG {subset} -- {part}: {probe_ids.shape} -- {means_msg} {dupe_msg}")
-                # 2021-11-29: confirmed that all 361821 mouse means in IDAT DO get read. 4622 of these are control probes, but
-                # methylprep only uses 633 of them (matching 635 EPIC probes for QC).
-                # 919 of these probes are duplicates having the same illumina_id but different IlmnIDs (TC11, TC12, TC13 etc..) that dont merge right.
-                #if subset == 'methylated' and part == 'IR-B-Meth':
+            if debug: print('DEBUG comparing [manifest probe_IDs vs idat probe_means]')
 
-                #************ DEBUG ***********#
-                # merge and establish IlmnIDs from illumina_ids here
-                ref_probe_names = ref[['AddressA_ID', 'AddressB_ID']].reset_index()
-                probe_subset_data = ref_probe_names.merge(probe_means, how='inner',
-                    left_on=i['probe_address'],
-                    right_on='illumina_id')
-                probe_subset_data['used'] = self.address_code[i['probe_address']]
-                mean_col_name = 'Meth' if 'Meth' in part else 'Unmeth'
-                probe_subset_data = probe_subset_data.rename(columns={'mean_value': mean_col_name})
-                probe_subset_data = probe_subset_data.drop(['illumina_id'], axis='columns')
-                # looks like duplicated probes DO have different mean_values, so it works. nothing is lost.
-                #if (probe_subset_data.IlmnID.duplicated().sum() > 0
-                #    or probe_subset_data.IlmnID.isna().sum() > 0
-                #    or probe_subset_data[mean_col_name].isna().sum() > 0
-                #    or probe_subset_data['AddressA_ID'].duplicated().sum() > 0
-                #    or ('II' not in part and probe_subset_data['AddressB_ID'].duplicated().sum() > 0)):
-                #    print('ERROR')
-                #    import pdb;pdb.set_trace()
-                probe_subset_data = probe_subset_data.set_index('IlmnID')
-                data_frames[part] = probe_subset_data
+            for subset, decoder_parts in self.subsets.items():
+                data_frames = {}
+                for part in decoder_parts:
+                    i = self.idat_decoder.loc[part]
+                    ref = self.snp_man.copy() if i['snp'] == 1 else self.man.copy()
+                    # can't merge on NAType, so filling in -1s. No probe_means illumina_ids will match -1
+                    # using -1 instead of NaN throughout solves a lot of problems!
+                    if ref['AddressA_ID'].isna().sum() > 0:
+                        ref.loc[:, 'AddressA_ID'].fillna(-1, inplace=True)
+                    if ref['AddressB_ID'].isna().sum() > 0:
+                        #ref.loc[ (ref['AddressB_ID'].isnull()), 'AddressB_ID'] = -1
+                        ref.loc[:, 'AddressB_ID'].fillna(-1, inplace=True)
+                    # and pandas won't compare NaN to NaN... so need this extra color_channel filter
+                    color_channel = ref['Color_Channel'].isna() if i['Color_Channel'] is None else (ref['Color_Channel'] == i['Color_Channel'])
+                    probe_ids = ref[ (ref['Infinium_Design_Type'] == i['Infinium_Design_Type']) & (color_channel) ][i['probe_address']]
+                    probe_means = self.data_channel[i['data_channel']] # starts with all 361821 mouse probes here, keyed to illumina_ids
+                    probe_means = probe_means.reset_index() # index is Nth row; illumina_id now a column that can be redundant
+                    probe_means = probe_means[ probe_means.illumina_id.isin(probe_ids) ]
+                    if len(probe_ids) == 0:
+                        LOGGER.error(f"SigSet.init(): no probes matched for {subset}:{part}")
+                    #************ DEBUG ***********#
+                    if debug:
+                        #print(f"DEBUG duplicated probe_ids (from manifest): {len( probe_ids[probe_ids.duplicated(keep=False)] )}")
+                        duped = len( probe_ids[probe_ids.duplicated(keep=False)] )
+                        dupe_msg = f"-- {duped} multiprobes" if duped != 0 else ''
+                        means_msg = probe_means.shape if probe_means.shape[0] != probe_ids.shape[0] else 'OK'
+                        print(f"DEBUG {subset} -- {part}: {probe_ids.shape} -- {means_msg} {dupe_msg}")
+                    # 2021-11-29: confirmed that all 361821 mouse means in IDAT DO get read. 4622 of these are control probes, but
+                    # methylprep only uses 633 of them (matching 635 EPIC probes for QC).
+                    # 919 of these probes are duplicates having the same illumina_id but different IlmnIDs (TC11, TC12, TC13 etc..) that dont merge right.
+                    #if subset == 'methylated' and part == 'IR-B-Meth':
 
-            try:
-                # here, put the meth and unmeth parts into separate columns as we combine
-                meth_parts = [frame for frame in data_frames.values() if 'Meth' in frame.columns]
-                unmeth_parts = [frame for frame in data_frames.values() if 'Unmeth' in frame.columns]
-                if unmeth_parts == []:
-                    data_frame = pd.concat(meth_parts)
-                    data_frame['Unmeth'] = None
-                elif meth_parts == []:
-                    data_frame = pd.concat(unmeth_parts)
-                    data_frame['Meth'] = None
-                else:
-                    data_frame = pd.concat(meth_parts)
-                    # need to keep NaNs in Meth / Unmeth when merging, so 'outer'
-                    test_data_frame = data_frame.merge(pd.concat(unmeth_parts)[['Unmeth']], left_index=True, right_index=True, how='inner')
-                    data_frame = data_frame.merge(pd.concat(unmeth_parts)[['Unmeth']], left_index=True, right_index=True, how='outer')
-                    #if len(data_frame) != len(test_data_frame):
-                    #    print(f"---- DEBUG {subset} {data_frame.shape} vs {test_data_frame.shape}")
-                    # -- this explained by having NaNs in either Meth/Unmeth channel
-                if debug:
-                    print(subset, len(data_frame))
-                setattr(self, subset, data_frame)
-            except Exception as e:
-                raise Exception(f"SigSet: {e}")
+                    #************ DEBUG ***********#
+                    # merge and establish IlmnIDs from illumina_ids here
+                    ref_probe_names = ref[['AddressA_ID', 'AddressB_ID']].reset_index()
+                    probe_subset_data = ref_probe_names.merge(probe_means, how='inner',
+                        left_on=i['probe_address'],
+                        right_on='illumina_id')
+                    probe_subset_data['used'] = self.address_code[i['probe_address']]
+                    mean_col_name = 'Meth' if 'Meth' in part else 'Unmeth'
+                    probe_subset_data = probe_subset_data.rename(columns={'mean_value': mean_col_name})
+                    probe_subset_data = probe_subset_data.drop(['illumina_id'], axis='columns')
+                    # looks like duplicated probes DO have different mean_values, so it works. nothing is lost.
+                    #if (probe_subset_data.IlmnID.duplicated().sum() > 0
+                    #    or probe_subset_data.IlmnID.isna().sum() > 0
+                    #    or probe_subset_data[mean_col_name].isna().sum() > 0
+                    #    or probe_subset_data['AddressA_ID'].duplicated().sum() > 0
+                    #    or ('II' not in part and probe_subset_data['AddressB_ID'].duplicated().sum() > 0)):
+                    #    print('ERROR')
+                    #    import pdb;pdb.set_trace()
+                    probe_subset_data = probe_subset_data.set_index('IlmnID')
+                    data_frames[part] = probe_subset_data
 
-        self.starting_probe_counts = {subset: getattr(self, subset).shape[0] for subset in self.subsets.keys()} # DEBUGGING
-        self.detect_and_drop_duplicates()
-        if debug: self.check_for_probe_loss()
+                try:
+                    # here, put the meth and unmeth parts into separate columns as we combine
+                    meth_parts = [frame for frame in data_frames.values() if 'Meth' in frame.columns]
+                    unmeth_parts = [frame for frame in data_frames.values() if 'Unmeth' in frame.columns]
+                    if unmeth_parts == []:
+                        data_frame = pd.concat(meth_parts)
+                        data_frame['Unmeth'] = None
+                    elif meth_parts == []:
+                        data_frame = pd.concat(unmeth_parts)
+                        data_frame['Meth'] = None
+                    else:
+                        data_frame = pd.concat(meth_parts)
+                        # need to keep NaNs in Meth / Unmeth when merging, so 'outer'
+                        test_data_frame = data_frame.merge(pd.concat(unmeth_parts)[['Unmeth']], left_index=True, right_index=True, how='inner')
+                        data_frame = data_frame.merge(pd.concat(unmeth_parts)[['Unmeth']], left_index=True, right_index=True, how='outer')
+                        #if len(data_frame) != len(test_data_frame):
+                        #    print(f"---- DEBUG {subset} {data_frame.shape} vs {test_data_frame.shape}")
+                        # -- this explained by having NaNs in either Meth/Unmeth channel
+                    if debug:
+                        print(subset, len(data_frame))
+                    setattr(self, subset, data_frame)
+                except Exception as e:
+                    raise Exception(f"SigSet: {e}")
+
+            self.starting_probe_counts = {subset: getattr(self, subset).shape[0] for subset in self.subsets.keys()} # DEBUGGING
+            self.detect_and_drop_duplicates()
+            if debug: self.check_for_probe_loss()
 
     # originally was `set_bg_corrected` from MethylationDataset | called by NOOB
     def update_probe_means(self, noob_green, noob_red, red_factor=None):

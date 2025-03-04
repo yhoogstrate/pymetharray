@@ -194,8 +194,7 @@ class SampleSheet():
 
     def add_sample(self, idat_grn, idat_red):
         manifest = Manifest(ArrayType.from_probe_count(idat_grn.n_snps_read))
-        sigset = SigSet("for historical reasons?", idat_grn, idat_red, manifest)
-        
+        sigset = SigSet(idat_grn, idat_red, manifest)
 
     def find_idat_files(self, path, recursive = False) -> int:
         LOGGER.debug('Scanning path: '+str(path))
@@ -222,14 +221,6 @@ class SampleSheet():
             
             test_grn = IdatDataset(grn, Channel.GREEN, header_only = False) # shallow reading for file validation, force reading when needed
             test_red = IdatDataset(red, Channel.RED, header_only = True) # shallow reading for file validation, force reading when needed
-            
-
-            
-            # test_grn.get_probe_means()
-            # test_red.get_probe_means()
-
- 
-
             
             self.add_sample(test_grn, test_red)
             n += 1

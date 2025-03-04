@@ -7,11 +7,12 @@ from pathlib import Path, PurePath
 import pandas as pd
 import re
 from _io import BufferedReader
-from tqdm import tqdm
+import deprecation
 
 # App
 from ..models import Sample, Channel, SigSet, ArrayType
 from ..utils import get_file_object, reset_file
+from ..utils.progress_bar import *
 from ..files import Manifest, IdatDataset
 
 
@@ -24,7 +25,7 @@ REQUIRED_HEADERS = {'Sample_Name', 'Sentrix_ID', 'Sentrix_Position'}
 ALT_REQUIRED_HEADERS = {'Sample_Name', 'SentrixBarcode_A', 'SentrixPosition_A'}
 
 
-
+@deprecation.deprecated()
 def get_sample_sheet_s3(zip_reader):
     """ reads a zipfile and considers all filenames with 'sample_sheet' but will test all csv.
     the zip_reader is an amazon S3ZipReader object capable of reading the zipfile header."""
@@ -122,7 +123,6 @@ def find_sample_sheet(dir_path, return_all=False):
 
 
 
-
 def sample_names_from_matrix(dir_path, ordered_GSMs=None):
     """Extracts sample names from a GEO Series Matrix File and returns them in the order of the inputted GSM_IDs
 
@@ -193,8 +193,13 @@ class SampleSheet():
             self.find_idat_files(path, recursive)
 
     def add_sample(self, idat_grn, idat_red):
-        manifest = Manifest(ArrayType.from_probe_count(idat_grn.n_snps_read))
-        sigset = SigSet(idat_grn, idat_red, manifest)
+        #@todo make a SampleDataContainer object rather than SigSet
+        #s = Sample()
+        #sdc = SampleDataContainer(s)
+        
+        sigset = SigSet("legacy", idat_grn, idat_red, Manifest(ArrayType.from_probe_count(idat_grn.n_snps_read)))
+        
+        self.__samples.append(sigset)
 
     def find_idat_files(self, path, recursive = False) -> int:
         LOGGER.debug('Scanning path: '+str(path))

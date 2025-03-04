@@ -1,4 +1,4 @@
-# pymethyarray: API fork and rewrite of foxotech/methylprep
+# pymethyarray: API fork/rewrite of methylprep
 
 `pymetharray` is a fork of the python package, `methylprep` which became unmaintained.
 As such, `pymetharray` is a python package for processing Illumina methylation array data.

@@ -205,6 +205,9 @@ class SigSet():
         
         self.debug = debug
         self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file
+        self.manifest = manifest
+        self.green_idat = green_idat
+        self.red_idat = red_idat
 
         snps_read = {green_idat.n_snps_read, red_idat.n_snps_read}
         if len(snps_read) > 1:

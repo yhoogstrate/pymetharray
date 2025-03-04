@@ -97,8 +97,7 @@ def download_file(filename:str, src_url:str, dest_dir:Path, overwrite=False) -> 
     elif not overwrite:
         # check if file already exists, and return if it is there.
         LOGGER.info(f'File exists: {dest_path} Set overwrite=True to overwrite the file.')
-        #raise FileExistsError(f'File exists: {dest_path}') # -- raising an error here terminates lambda, except that pipeline_s3 catches it.
-        return
+        raise FileExistsError(f'File exists: {dest_path}') # -- raising an error here terminates lambda, except that pipeline_s3 catches it.
     try:
         with urlopen(req) as response:
             with open(dest_path, 'wb') as out_file:
@@ -117,6 +116,8 @@ def download_file(filename:str, src_url:str, dest_dir:Path, overwrite=False) -> 
             raise URLError(e)
     
     return Path(dest_path)
+
+
 
 def is_file_like(obj):
     """Check if the object is a file-like object.

@@ -7,10 +7,12 @@ from pathlib import Path, PurePath
 import pandas as pd
 import re
 from _io import BufferedReader
+from tqdm import tqdm
 
 # App
-from ..models import Sample
+from ..models import Sample, Channel
 from ..utils import get_file_object, reset_file
+from ..files import IdatDataset
 
 
 __all__ = ['SampleSheet', 'get_sample_sheet',  'get_sample_sheet_s3', 'find_sample_sheet', 'create_sample_sheet']
@@ -179,17 +181,57 @@ class SampleSheet():
 
     __data_frame = None
 
-    def __init__(self, filepath_or_buffer, data_dir):
+    def __init__(self, path = None, recursive = False):
         self.__samples = []
         self.fields = {}
         self.renamed_fields = {}
 
-        self.data_dir = data_dir
+        #self.data_dir = data_dir
         self.headers = []
         self.alt_headers = None
 
-        with get_file_object(filepath_or_buffer) as sample_sheet_fh:
-            self.read(sample_sheet_fh)
+        if path:
+            self.find_idat_files(path, recursive)
+
+    def find_idat_files(self, path, recursive = False):
+        LOGGER.debug('Scanning path: '+str(path))
+        sample_dir = Path(path)
+
+        if not sample_dir.is_dir():
+            raise FileNotFoundError(f'{dir_path} is not a valid directory path')
+
+        files_grn = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Grn.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Grn.idat.gz')])
+        files_red = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat.gz')])
+        
+        if len(files_grn) != len(files_red):
+            logger.warning("Number of grn and red files found not equal")
+
+        for grn in tqdm(files_grn):
+            red = grn
+            red = re.sub(r"_Grn.idat.gz$", "_Red.idat.gz", red)
+            red = re.sub(r"_Grn.idat$", "_Red.idat", red)
+
+            if red not in files_red:
+                raise Exception("Missing file: " + red)
+            
+            test_grn = IdatDataset(grn, Channel.GREEN, header_only = True) # shallow reading for file validation
+            test_red = IdatDataset(red, Channel.RED, header_only = True) # shallow reading for file validation
+
+        #@todo self.add_sample(test_grn, test_red) which should insert stuff into self.__data_frame
+        
+        # self.__data_frame = pd.read_csv(
+            # sample_sheet_file,
+            # header=start_row,
+            # keep_default_na=False,
+            # skip_blank_lines=True,
+            # dtype=str,
+        # )
+        
+"""
+        GSM_ID,Sample_Name,Sentrix_ID,Sentrix_Position,channel_Grn,channel_Red
+        GSM6379997,Sample_1,203927450093,R01C01,cache/GSM6379997_203927450093_R01C01_Grn.idat,cache/GSM6379997_203927450093_R01C01_Red.idat
+        GSM6379998,Sample_2,203927450107,R07C01,cache/GSM6379998_203927450107_R07C01_Grn.idat.gz,cache/GSM6379998_203927450107_R07C01_Red.idat.gz
+"""
 
     @beartype
     @staticmethod
@@ -480,7 +522,7 @@ def get_sample_sheet(dir_path, filepath=None) -> SampleSheet:
 
 @beartype
 def create_sample_sheet(dir_path, matrix_file=False, output_file='samplesheet.csv',
-    sample_type='', sample_sub_type='', output_path=None, file_basename_filters = None) -> SampleSheet:
+    sample_type='', sample_sub_type='', output_path=None, file_basename_filters = None):
     """Creates a samplesheet.csv file from the .IDAT files of a GEO series directory
 
     Arguments:
@@ -584,5 +626,6 @@ def create_sample_sheet(dir_path, matrix_file=False, output_file='samplesheet.cs
 
     LOGGER.info(f"[!] Created sample sheet: {exp_path} with {len(_dict['GSM_ID'])} GSM_IDs")
     
-    return (SampleSheet(output_file, output_path if output_path is not None else dir_path))
+    #return (SampleSheet(output_file, output_path if output_path is not None else dir_path))
+    return (dir_path)
 

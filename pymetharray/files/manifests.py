@@ -1,9 +1,14 @@
+#!/usr/bin/env python
+
 # Lib
+from beartype import beartype
+
 import logging
 from pathlib import Path
 from urllib.parse import urljoin
 import numpy as np
 import pandas as pd
+
 # App
 from ..models import ArrayType, Channel, ProbeType
 from ..utils import (
@@ -15,7 +20,7 @@ from ..utils import (
 )
 
 
-__all__ = ['Manifest']
+__all__ = ['Manifest', "ManifestCace", "manifest_cache"]
 
 
 LOGGER = logging.getLogger(__name__)
@@ -337,3 +342,28 @@ class Manifest():
 
         channel_mask = data_frame['Color_Channel'].values == channel.value
         return data_frame[probe_type_mask & channel_mask]
+
+
+
+class ManifestCache:
+    """
+    Class to keep 1 copy per manifest into mem
+    """
+    
+    def __init__(self):
+        self.__cache = {}
+    
+    @beartype
+    def get(self, array_type) -> Manifest:
+        if array_type not in self.__cache:
+            self.__cache[array_type] = Manifest(array_type)
+        
+        return self.__cache[array_type]
+
+    @beartype
+    def __str__(self) -> str:
+        return "\n".join(["- "+str(_) for _ in sorted(self.__cache.keys())])
+            
+
+
+manifest_cache = ManifestCache()

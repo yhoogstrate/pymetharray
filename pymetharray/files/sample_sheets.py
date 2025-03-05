@@ -1,6 +1,7 @@
-from beartype import beartype
+#!/usr/bin/env python
 
 # Lib
+from beartype import beartype
 import os
 import logging
 from pathlib import Path, PurePath
@@ -13,7 +14,7 @@ import deprecation
 from ..models import Sample, Channel, SigSet, ArrayType
 from ..utils import get_file_object, reset_file
 from ..utils.progress_bar import *
-from ..files import Manifest, IdatDataset
+from ..files import Manifest, manifest_cache, IdatDataset
 
 
 __all__ = ['SampleSheet', 'get_sample_sheet',  'get_sample_sheet_s3', 'find_sample_sheet', 'create_sample_sheet']
@@ -209,8 +210,13 @@ class SampleSheet():
                 Sample_Name = "naam2",
                 name = "name"
             )
+        at = ArrayType.from_probe_count(idat_grn.n_snps_read)
+        print(at)
+        print(manifest_cache)
+        mf = manifest_cache.get(at)
         
-        sigset = SigSet(s, idat_grn, idat_red, Manifest(ArrayType.from_probe_count(idat_grn.n_snps_read)))
+        
+        sigset = SigSet(s, idat_grn, idat_red, mf)
         
         self.__samples.append(sigset)
 

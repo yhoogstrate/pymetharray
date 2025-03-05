@@ -64,7 +64,7 @@ for sample in ss:
             pneg_ecdf=False,
             file_format='pickle'
         )
-    #data_container.process_all()
+    data_container.process_all()
 
 
 

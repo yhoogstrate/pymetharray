@@ -118,6 +118,7 @@ class Manifest():
         if filepath_or_buffer is None:
             filepath_or_buffer = self.download_default(array_type, self.on_lambda)
 
+        LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer))
         with get_file_object(filepath_or_buffer) as manifest_file:
             self.__data_frame = self.read_probes(manifest_file)
             self.__control_data_frame = self.read_control_probes(manifest_file)
@@ -126,6 +127,7 @@ class Manifest():
                 self.__mouse_data_frame = self.read_mouse_probes(manifest_file)
             else:
                 self.__mouse_data_frame = pd.DataFrame()
+        LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer) + " (done)")
 
     @property
     def columns(self):

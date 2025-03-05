@@ -200,7 +200,17 @@ class SampleSheet():
         #s = Sample()
         #sdc = SampleDataContainer(s)
         
-        sigset = SigSet("legacy", idat_grn, idat_red, Manifest(ArrayType.from_probe_count(idat_grn.n_snps_read)))
+        s = Sample(
+                data_dir = ".",  # this assumes the .idat files are in the same folder with the samplesheet.
+                sentrix_id = "12312312",
+                sentrix_position = "C11B44",
+                channel_grn = idat_grn.filepath_or_buffer.strip(),
+                channel_red = idat_red.filepath_or_buffer.strip(),
+                Sample_Name = "naam2",
+                name = "name"
+            )
+        
+        sigset = SigSet(s, idat_grn, idat_red, Manifest(ArrayType.from_probe_count(idat_grn.n_snps_read)))
         
         self.__samples.append(sigset)
 

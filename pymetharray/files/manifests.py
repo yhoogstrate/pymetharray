@@ -8,6 +8,8 @@ from pathlib import Path
 from urllib.parse import urljoin
 import numpy as np
 import pandas as pd
+import os
+import pickle
 
 # App
 from ..models import ArrayType, Channel, ProbeType
@@ -119,20 +121,29 @@ class Manifest():
         self.array_type = array_type
         self.on_lambda = on_lambda # changes filepath to /tmp for the read-only file system
         self.verbose = verbose
+        
+        fn = self.cache_filename
 
-        if filepath_or_buffer is None:
-            filepath_or_buffer = self.download_default(array_type, self.on_lambda)
+        if os.path.exists(fn):
+            print ("parse from cache file!")
+            self.from_cache()
+        else:
 
-        LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer))
-        with get_file_object(filepath_or_buffer) as manifest_file:
-            self.__data_frame = self.read_probes(manifest_file)
-            self.__control_data_frame = self.read_control_probes(manifest_file)
-            self.__snp_data_frame = self.read_snp_probes(manifest_file)
-            if self.array_type == ArrayType.ILLUMINA_MOUSE:
-                self.__mouse_data_frame = self.read_mouse_probes(manifest_file)
-            else:
-                self.__mouse_data_frame = pd.DataFrame()
-        LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer) + " (done)")
+            if filepath_or_buffer is None:
+                filepath_or_buffer = self.download_default(array_type, self.on_lambda)
+
+            LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer))
+            with get_file_object(filepath_or_buffer) as manifest_file:
+                self.__data_frame = self.read_probes(manifest_file)
+                self.__control_data_frame = self.read_control_probes(manifest_file)
+                self.__snp_data_frame = self.read_snp_probes(manifest_file)
+                if self.array_type == ArrayType.ILLUMINA_MOUSE:
+                    self.__mouse_data_frame = self.read_mouse_probes(manifest_file)
+                else:
+                    self.__mouse_data_frame = pd.DataFrame()
+            LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer) + " (done)")
+            
+            self.to_cache()
 
     @property
     def columns(self):
@@ -342,7 +353,43 @@ class Manifest():
 
         channel_mask = data_frame['Color_Channel'].values == channel.value
         return data_frame[probe_type_mask & channel_mask]
+    
+    @property
+    def cache_filename(self):
+        dir_path = Path(MANIFEST_DIR_PATH).expanduser()
+        filename = "manifest_" + str(self.array_type) + ".cache.pkl"
+        filepath = Path(dir_path).joinpath(filename)
+        
+        return filepath
+    
+    def to_cache(self):
+        out = {
+            'array_type': self.array_type,
+            'data_frame': self.__data_frame,
+            'control_data_frame': self.__control_data_frame,
+            'snp_data_frame': self.__snp_data_frame,
+            'mouse_data_frame': self.__mouse_data_frame
+        }
+        
+        fn = self.cache_filename
+        
+        LOGGER.info(" => " + str(fn))
+        
+        with open(fn, 'wb') as fh:
+            pickle.dump(out, fh)
+        
+        LOGGER.info("exported manifest to: "+str(fn))
 
+    def from_cache(self):
+        with open(self.cache_filename, 'rb') as fh:
+            cache = pickle.load(fh)
+        
+        assert(self.array_type == cache['array_type'])
+        
+        self.__data_frame = cache['data_frame']
+        self.__control_data_frame = cache['control_data_frame']
+        self.__snp_data_frame = cache['snp_data_frame']
+        self.__mouse_data_frame = cache['mouse_data_frame']
 
 
 class ManifestCache:

@@ -1350,10 +1350,13 @@ class SampleDataContainer(SigSet):
         #        else:
         #            num_missing = self.__data_frame['meth'].isna().sum() + self.__data_frame['unmeth'].isna().sum()
         #        self.raw_processing_missing_probe_errors.append((output_path, num_missing))
-        if self.file_format == 'parquet':
-            this.to_parquet(output_path)
-        else:
-            this.to_csv(output_path)
+        
+        
+        this.to_pickle(output_path)
+        #if self.file_format == 'parquet':
+        #    this.to_parquet(output_path)
+        #else:
+        #    this.to_csv(output_path)
 
     def _postprocess(self, input_dataframe, postprocess_func, header, offset=None):
         if offset is not None:

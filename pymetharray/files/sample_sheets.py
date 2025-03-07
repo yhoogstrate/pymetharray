@@ -197,24 +197,17 @@ class SampleSheet():
             self.find_idat_files(path, recursive)
 
     def add_sample(self, idat_grn, idat_red):
-        #@todo make a SampleDataContainer object rather than SigSet
-        #s = Sample()
-        #sdc = SampleDataContainer(s)
-        
         s = Sample(
                 data_dir = ".",  # this assumes the .idat files are in the same folder with the samplesheet.
                 sentrix_id = "12312312",
                 sentrix_position = "C11B44",
                 channel_grn = idat_grn.filepath_or_buffer.strip(),
                 channel_red = idat_red.filepath_or_buffer.strip(),
-                Sample_Name = "naam2",
+                #Sample_Name = "naam2",
                 name = "name"
             )
         at = ArrayType.from_probe_count(idat_grn.n_snps_read)
-        print(at)
-        print(manifest_cache)
         mf = manifest_cache.get(at)
-        
         
         sigset = SigSet(s, idat_grn, idat_red, mf)
         
@@ -279,14 +272,6 @@ class SampleSheet():
 
         return False
 
-    @beartype
-    @staticmethod
-    def is_valid_csv(filepath_or_buffer) -> bool:
-        try:
-            data_frame = pd.read_csv(filepath_or_buffer, header=None, nrows=25)
-            return True
-        except Exception:
-            return False
 
     @beartype
     def get_samples(self) -> list:

@@ -125,14 +125,12 @@ class Manifest():
         fn = self.cache_filename
 
         if os.path.exists(fn):
-            print ("parse from cache file!")
             self.from_cache()
         else:
 
             if filepath_or_buffer is None:
                 filepath_or_buffer = self.download_default(array_type, self.on_lambda)
 
-            LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer))
             with get_file_object(filepath_or_buffer) as manifest_file:
                 self.__data_frame = self.read_probes(manifest_file)
                 self.__control_data_frame = self.read_control_probes(manifest_file)
@@ -141,7 +139,6 @@ class Manifest():
                     self.__mouse_data_frame = self.read_mouse_probes(manifest_file)
                 else:
                     self.__mouse_data_frame = pd.DataFrame()
-            LOGGER.info("Parsing Manifest: " + str(filepath_or_buffer) + " (done)")
             
             self.to_cache()
 
@@ -363,6 +360,8 @@ class Manifest():
         return filepath
     
     def to_cache(self):
+        LOGGER.info("Exporting Manifest " + str(self.array_type) + " to: "+ str(filepath_or_buffer))
+        
         out = {
             'array_type': self.array_type,
             'data_frame': self.__data_frame,
@@ -373,12 +372,9 @@ class Manifest():
         
         fn = self.cache_filename
         
-        LOGGER.info(" => " + str(fn))
-        
         with open(fn, 'wb') as fh:
             pickle.dump(out, fh)
-        
-        LOGGER.info("exported manifest to: "+str(fn))
+
 
     def from_cache(self):
         with open(self.cache_filename, 'rb') as fh:

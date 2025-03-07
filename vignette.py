@@ -44,8 +44,7 @@ ss = SampleSheet("cache/", recursive=False)
 
 for sample in ss:
     print(" - Sample: "+str(sample))
-    print("   :: " + str(sample.green_idat))
-    print("   :: " + str(sample.red_idat))
+    print("   :: " + str(sample.get_sentrix_id()))
     
     data_container = SampleDataContainer(
             idat_dataset_pair={'green_idat': sample.green_idat, 'red_idat': sample.red_idat, 'sample': sample.sample},
@@ -67,7 +66,6 @@ for sample in ss:
     
     data_container.process_all()
     data_container.export("cache/out.txt") # apparently caches to a path and not a pkl file
-
 
 
 # from pymetharray.processing.pipeline import run_pipeline_ss

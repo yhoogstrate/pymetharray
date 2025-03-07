@@ -203,6 +203,8 @@ class SigSet():
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
         """
         
+        assert(green_idat.get_sentrix_id() == red_idat.get_sentrix_id())
+        
         self.debug = debug
         self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file
         self.manifest = manifest
@@ -345,6 +347,9 @@ class SigSet():
         self.starting_probe_counts = {subset: getattr(self, subset).shape[0] for subset in self.subsets.keys()} # DEBUGGING
         self.detect_and_drop_duplicates()
         if debug: self.check_for_probe_loss()
+
+    def get_sentrix_id(self):
+        return self.green_idat.get_sentrix_id() # grn & red have been validated to be identical
 
     # originally was `set_bg_corrected` from MethylationDataset | called by NOOB
     def update_probe_means(self, noob_green, noob_red, red_factor=None):

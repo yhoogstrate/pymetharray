@@ -184,18 +184,12 @@ class IdatDataset():
         return self.label
     
     @beartype
+    def get_sentrix_id(self) -> str:
+        return self.get_barcode() + "_" + self.get_label()
+    
+    @beartype
     def __str__(self) -> str:
-        out = ""
-        
-        tmp = self.get_barcode()
-        if tmp:
-            out += tmp
-            
-        tmp = self.get_label()
-        if tmp:
-            out += "_" + tmp
-
-        return out
+        return ""
 
     @beartype
     @staticmethod

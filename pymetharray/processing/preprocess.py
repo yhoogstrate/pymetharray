@@ -269,7 +269,9 @@ def _apply_sesame_quality_mask(data_container):
         to use TCGA masking, only applies to HM450
 
     """
-    if data_container.array_type not in (
+    
+    
+    if data_container.manifest.array_type not in (
         # ArrayType.ILLUMINA_27K,
         ArrayType.ILLUMINA_450K,
         ArrayType.ILLUMINA_EPIC,
@@ -278,14 +280,14 @@ def _apply_sesame_quality_mask(data_container):
         LOGGER.info(f"Quality masking is not supported for {data_container.array_type}.")
         return
     # load set of probes to remove from local file
-    if data_container.array_type == ArrayType.ILLUMINA_450K:
+    if data_container.manifest.array_type == ArrayType.ILLUMINA_450K:
         probes = qualityMask450
-    elif data_container.array_type == ArrayType.ILLUMINA_EPIC:
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_EPIC:
         probes = qualityMaskEPIC
-    elif data_container.array_type == ArrayType.ILLUMINA_EPIC_PLUS:
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_EPIC_PLUS:
         # this is a bit of a hack; probe names don't match epic, so I'm temporarily renaming, then filtering, then reverting.
         probes = qualityMaskEPICPLUS
-    elif data_container.array_type == ArrayType.ILLUMINA_MOUSE:
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
         probes = qualityMaskmouse
 
     # v1.6+: the 1.0s are good probes and the 0.0 are probes to be excluded.

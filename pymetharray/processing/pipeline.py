@@ -1104,7 +1104,7 @@ class SampleDataContainer(SigSet):
         super().__init__(self.sample, self.green_idat, self.red_idat, self.manifest, self.debug)
         # SigSet defines all probe-subsets, then SampleDataContainer adds them with super(); no need to re-define below.
         # mouse probes are processed within the normals meth/unmeth sets, then split at end of preprocessing step.
-        del self.manifest
+        #del self.manifest
         del manifest
 
         if self.data_type not in ('float64','float32','float16'):
@@ -1252,7 +1252,7 @@ class SampleDataContainer(SigSet):
         # normal_probes_mask = (self.manifest.data_frame.index.str.startswith('cg', na=False)) | (self.manifest.data_frame.index.str.startswith('ch', na=False))
         # v2_mouse_probes_mask = (self.manifest.data_frame.index.str.startswith('mu', na=False)) | (self.manifest.data_frame.index.str.startswith('rp', na=False))
         # v4 mouse_probes_mask pre-v1.4.6: ( (self.manifest.data_frame['Probe_Type'] == 'mu') | (self.manifest.data_frame['Probe_Type'] == 'rp') | self.manifest.data_frame.index.str.startswith('uk', na=False) )
-        if self.array_type == ArrayType.ILLUMINA_MOUSE:
+        if self.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
             mouse_probes = self.man[self.mouse_probes_mask]
             mouse_probe_count = mouse_probes.shape[0]
         else:
@@ -1288,7 +1288,7 @@ class SampleDataContainer(SigSet):
         if self.debug:
             self.check_for_probe_loss(f"816 self.check_for_probe_loss(): self.__data_frame = {self.__data_frame.shape}")
 
-        if self.array_type == ArrayType.ILLUMINA_MOUSE:
+        if self.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
             self.mouse_data_frame = self.process_beta_value(self.mouse_data_frame)
             self.mouse_data_frame = self.process_m_value(self.mouse_data_frame)
             self.mouse_data_frame = self.process_copy_number(self.mouse_data_frame)

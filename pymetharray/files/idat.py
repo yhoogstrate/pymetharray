@@ -23,7 +23,7 @@ from ..utils import (
 
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel( logging.INFO )
+LOGGER.setLevel( logging.DEBUG )
 
 __all__ = ['IdatDataset']
 
@@ -148,6 +148,9 @@ class IdatDataset():
         header_only:bool=False
     ):
         """Initializes the IdatDataset, reads and parses the IDAT file."""
+        
+        LOGGER.debug("Init IdatDataset: " + str(filepath_or_buffer))
+        
         self.filepath_or_buffer = filepath_or_buffer
         self.verbose = verbose
         self.channel = channel
@@ -273,7 +276,8 @@ class IdatDataset():
         Returns:
             DataFrame -- mean probe intensity values indexed by Illumina ID.
         """
-        LOGGER.info("Parsing *.idat file: " + str(self.filepath_or_buffer))
+
+        LOGGER.debug("Parse IdatDataset (" + ("shallow" if header_only else "deep") + "): " + str(self.filepath_or_buffer))
         
         section_offsets = self.get_section_offsets(idat_file)
 

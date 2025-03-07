@@ -236,8 +236,8 @@ class SampleSheet():
             if red not in files_red:
                 raise Exception("Missing file: " + red)
             
-            test_grn = IdatDataset(grn, Channel.GREEN, header_only = False) # shallow reading for file validation, force reading when needed
-            test_red = IdatDataset(red, Channel.RED, header_only = True) # shallow reading for file validation, force reading when needed
+            test_grn = IdatDataset(grn, Channel.GREEN, header_only = True) # shallow reading for file validation, force reading when needed
+            test_red = IdatDataset(red, Channel.RED,   header_only = True) # shallow reading for file validation, force reading when needed
             
             self.add_sample(test_grn, test_red)
             n += 1

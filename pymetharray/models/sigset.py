@@ -203,10 +203,12 @@ class SigSet():
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
         """
         
+        LOGGER.info("SigSet init: Grn: " + green_idat.get_sentrix_id() + " -- Red: " +  red_idat.get_sentrix_id())
+        
         assert(green_idat.get_sentrix_id() == red_idat.get_sentrix_id())
         
         self.debug = debug
-        self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file
+        self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file, deprecate a.s.a.p.
         self.manifest = manifest
         self.green_idat = green_idat
         self.red_idat = red_idat
@@ -223,7 +225,9 @@ class SigSet():
         # these next two should be unnecessary, because nothing should be reading idats downstream; use self.data_channel instead
         self.data_channel = {
             'GREEN': green_idat.get_probe_means(),
-            'RED':   red_idat.get_probe_means()} # indexed to illumina_ids
+            'RED':   red_idat.get_probe_means()
+        } # indexed to illumina_ids
+        
         # illumina_ids are all II means, plus a stacked list of type-I-AddressA and type-I-AddressB means
         self.sample = sample
         self.man = manifest.data_frame # relevant columns are 'probe_type', AddressA_ID, AddressB_ID, index, Color_Channel

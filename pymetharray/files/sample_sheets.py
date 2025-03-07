@@ -17,7 +17,7 @@ from ..utils.progress_bar import *
 from ..files import Manifest, manifest_cache, IdatDataset
 
 
-__all__ = ['SampleSheet', 'get_sample_sheet',  'get_sample_sheet_s3', 'find_sample_sheet', 'create_sample_sheet']
+__all__ = ['SampleSheet', 'get_sample_sheet_s3', 'find_sample_sheet', 'create_sample_sheet']
 
 
 LOGGER = logging.getLogger(__name__)
@@ -498,30 +498,6 @@ class SampleSheet():
         
         return meta_frame
 
-
-@beartype
-def get_sample_sheet(dir_path, filepath=None) -> SampleSheet:
-    """Generates a SampleSheet instance for a given directory of processed data.
-
-    Arguments:
-        dir_path {string or path-like} -- Base directory of the sample sheet and associated IDAT files.
-
-    Keyword Arguments:
-        filepath {string or path-like} -- path of the sample sheet file if provided, otherwise
-            one will try to be found. (default: {None})
-
-    Returns:
-        [SampleSheet] -- A SampleSheet instance.
-    """
-
-    if not filepath:
-        filepath = find_sample_sheet(dir_path)
-
-    LOGGER.debug('Reading sample sheet '+str(filepath))
-
-    data_dir = PurePath(dir_path)
-    
-    return SampleSheet(filepath, data_dir)
 
 
 @beartype

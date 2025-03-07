@@ -11,7 +11,7 @@ import deprecation
 from beartype import beartype
 
 # App
-from ..files import Manifest, get_sample_sheet, create_sample_sheet
+from ..files import Manifest, create_sample_sheet
 from ..models import (
     Channel,
     #MethylationDataset,

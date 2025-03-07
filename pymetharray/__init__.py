@@ -3,7 +3,7 @@ from logging import NullHandler, getLogger
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 # App
-from .files import get_sample_sheet, get_sample_sheet_s3
+from .files import get_sample_sheet_s3
 from .processing import (
     run_pipeline,
     make_pipeline,
@@ -24,7 +24,7 @@ __all__ = [
     'Manifest',
     #'get_manifest',
     #'get_raw_datasets',
-    'get_sample_sheet',
+    #'get_sample_sheet',
     'parse_sample_sheet_into_idat_datasets',
     'consolidate_values_for_sheet',
     'run_series',

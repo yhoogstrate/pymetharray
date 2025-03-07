@@ -35,6 +35,7 @@ ss = SampleSheet("cache/", recursive=False)
 
 for sample in ss:
     print(" - Sample: "+str(sample.get_sentrix_id()))
+    #print("name" , "=>", sample.sample.name)
     
     sample.load() # should be ran using a getter
     data_container = SampleDataContainer(

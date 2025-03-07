@@ -63,29 +63,29 @@ Keyword Arguments:
                     new_field_name = re.sub(r'\W+', '', new_field_name)
                 setattr(self, new_field_name, addl_fields[field])
                 self.renamed_fields[field] = new_field_name
-        self.group = addl_fields.get('Sample_Group')
-        self.name = addl_fields.get('Sample_Name')
-        self.plate = addl_fields.get('Sample_Plate')
-        self.pool = addl_fields.get('Pool_ID')
+        #self.group = addl_fields.get('Sample_Group')
+        #self.name = addl_fields.get('Sample_Name')
+        #self.plate = addl_fields.get('Sample_Plate')
+        #self.pool = addl_fields.get('Pool_ID')
         self.well = addl_fields.get('Sample_Well')
-        self.GSM_ID = addl_fields.get('GSM_ID') # for GEO published sample compatability
+        #self.GSM_ID = addl_fields.get('GSM_ID') # for GEO published sample compatability
         self.type = addl_fields.get('Sample_Type','Unknown') # from GEO MINiML meta data
-        self.sub_type = addl_fields.get('Sub_Type') # from GEO
-        self.is_control = True if addl_fields.get('Control') in (1,'1',True, 'True', 'true', 'TRUE') else False
+        #self.sub_type = addl_fields.get('Sub_Type') # from GEO
+        #self.is_control = True if addl_fields.get('Control') in (1,'1',True, 'True', 'true', 'TRUE') else False
         self.fields = {}
         self.fields.update(self.renamed_fields)
         self.fields.update({
             'Sentrix_ID': 'Sentrix_ID',
             'Sentrix_Position': 'Sentrix_Position', # these will be standardized here, regardless of sample_sheet variation names
-            'Sample_Group': 'Sample_Group',
-            'Sample_Name': 'Sample_Name',
-            'Sample_Plate': 'Sample_Plate',
+            #'Sample_Group': 'Sample_Group',
+            #'Sample_Name': 'Sample_Name',
+            #'Sample_Plate': 'Sample_Plate',
             'Sample_Type': 'Sample_Type',
-            'Sub_Type': 'Sub_Type',
+            #'Sub_Type': 'Sub_Type',
             'Sample_Well': 'Sample_Well',
-            'Pool_ID': 'Pool_ID',
-            'GSM_ID': 'GSM_ID',
-            'Control': 'Control',
+            #'Pool_ID': 'Pool_ID',
+            #'GSM_ID': 'GSM_ID',
+            #'Control': 'Control',
         })
 
 

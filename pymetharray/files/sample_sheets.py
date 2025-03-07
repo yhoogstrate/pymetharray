@@ -204,7 +204,7 @@ class SampleSheet():
                 channel_grn = idat_grn.filepath_or_buffer.strip(),
                 channel_red = idat_red.filepath_or_buffer.strip(),
                 #Sample_Name = "naam2",
-                name = "name"
+                #name = "name"
             )
         at = ArrayType.from_probe_count(idat_grn.n_snps_read)
         mf = manifest_cache.get(at)

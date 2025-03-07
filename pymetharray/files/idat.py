@@ -191,10 +191,6 @@ class IdatDataset():
         return self.get_barcode() + "_" + self.get_label()
     
     @beartype
-    def __str__(self) -> str:
-        return ""
-
-    @beartype
     @staticmethod
     @read_and_reset
     def is_idat_file(idat_file, expected) -> bool:

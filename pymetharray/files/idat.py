@@ -273,6 +273,8 @@ class IdatDataset():
         Returns:
             DataFrame -- mean probe intensity values indexed by Illumina ID.
         """
+        LOGGER.info("Parsing *.idat file: " + str(self.filepath_or_buffer))
+        
         section_offsets = self.get_section_offsets(idat_file)
 
         def seek_to_section(section_code):

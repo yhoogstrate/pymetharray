@@ -360,7 +360,9 @@ class Manifest():
         return filepath
     
     def to_cache(self):
-        LOGGER.info("Exporting Manifest " + str(self.array_type) + " to: "+ str(filepath_or_buffer))
+        fn = self.cache_filename
+        
+        LOGGER.info("Exporting Manifest " + str(self.array_type) + " to: "+ str(fn))
         
         out = {
             'array_type': self.array_type,
@@ -370,14 +372,16 @@ class Manifest():
             'mouse_data_frame': self.__mouse_data_frame
         }
         
-        fn = self.cache_filename
-        
         with open(fn, 'wb') as fh:
             pickle.dump(out, fh)
 
 
     def from_cache(self):
-        with open(self.cache_filename, 'rb') as fh:
+        fn = self.cache_filename
+        
+        LOGGER.info("Importing Manifest " + str(self.array_type) + " to: "+ str(fn))
+        
+        with open(fn, 'rb') as fh:
             cache = pickle.load(fh)
         
         assert(self.array_type == cache['array_type'])

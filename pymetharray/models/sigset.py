@@ -200,7 +200,7 @@ class SigSet():
     # after __init__, SigSet will have class variables for each of the keys in subsets above.
 
     @beartype
-    def __init__(self, sample, green_idat: IdatDataset, red_idat: IdatDataset, manifest, shallow:bool = True, debug:bool = False):
+    def __init__(self, green_idat: IdatDataset, red_idat: IdatDataset, manifest, shallow:bool = True, debug:bool = False):
         """ green_idat has .probe_means and .meta as main functions
         and for extra info, use extra kwargs:
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
@@ -211,7 +211,6 @@ class SigSet():
         assert(green_idat.get_sentrix_id() == red_idat.get_sentrix_id())
         
         self.debug = debug
-        self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file, deprecate a.s.a.p.
         self.manifest = manifest
         self.green_idat = green_idat
         self.red_idat = red_idat

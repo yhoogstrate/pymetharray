@@ -35,11 +35,13 @@ ss = SampleSheet("cache/", recursive=False)
 
 for sample in ss:
     print(" - Sample: "+str(sample.get_sentrix_id()))
-    #print("name" , "=>", sample.sample.name)
     
     sample.load() # should be ran using a getter
     data_container = SampleDataContainer(
-            idat_dataset_pair={'green_idat': sample.green_idat, 'red_idat': sample.red_idat, 'sample': sample.sample},
+            idat_dataset_pair={
+                'green_idat': sample.green_idat,
+                'red_idat': sample.red_idat
+            },
             manifest=sample.manifest, # or sample.man
             retain_uncorrected_probe_intensities=True,
             bit='float32',

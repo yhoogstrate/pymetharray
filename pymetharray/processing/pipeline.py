@@ -11,7 +11,7 @@ import deprecation
 from beartype import beartype
 
 # App
-from ..files import Manifest, create_sample_sheet
+from ..files import Manifest
 from ..models import (
     Channel,
     #MethylationDataset,
@@ -364,7 +364,7 @@ def run_pipeline_ss(sample_sheet: SampleSheet, array_type=None, export=False, ou
                     missing_probe_errors['raw'].extend(data_container.raw_processing_missing_probe_errors)
 
             if save_control: # Process and consolidate now. Keep in memory. These files are small.
-                sample_id = f"{data_container.sample.sentrix_id}_{data_container.sample.sentrix_position}"
+                sample_id = self.get_sentrix_id()
                 control_df = one_sample_control_snp(data_container)
                 control_snps[sample_id] = control_df
 
@@ -1085,7 +1085,7 @@ class SampleDataContainer(SigSet):
         self.do_nonlinear_dye_bias = do_nonlinear_dye_bias
         self.green_idat = idat_dataset_pair['green_idat']
         self.red_idat = idat_dataset_pair['red_idat']
-        self.sample = idat_dataset_pair['sample']
+        #self.sample = idat_dataset_pair['sample']
         self.retain_uncorrected_probe_intensities=retain_uncorrected_probe_intensities
         self.sesame = sesame # defines offsets in functions
         # pneg_ecdf defines if negative control based pvalue is calculated - will use poobah_decimals for rounding
@@ -1101,7 +1101,7 @@ class SampleDataContainer(SigSet):
             # these are read from idats directly, not SigSet, so need to be modified at source.
             infer_type_I_probes(self, debug=self.debug)
 
-        super().__init__(self.sample, self.green_idat, self.red_idat, self.manifest, self.debug)
+        super().__init__(self.green_idat, self.red_idat, self.manifest, self.debug)
         # SigSet defines all probe-subsets, then SampleDataContainer adds them with super(); no need to re-define below.
         # mouse probes are processed within the normals meth/unmeth sets, then split at end of preprocessing step.
         #del self.manifest

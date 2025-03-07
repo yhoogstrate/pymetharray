@@ -11,164 +11,19 @@ from _io import BufferedReader
 import deprecation
 
 # App
-from ..models import Sample, Channel, SigSet, ArrayType
+from ..models import Channel, SigSet, ArrayType
 from ..utils import get_file_object, reset_file
 from ..utils.progress_bar import *
 from ..files import Manifest, manifest_cache, IdatDataset
 
 
-__all__ = ['SampleSheet', 'get_sample_sheet_s3', 'find_sample_sheet', 'create_sample_sheet']
+__all__ = ['SampleSheet']
 
 
 LOGGER = logging.getLogger(__name__)
 
 REQUIRED_HEADERS = {'Sample_Name', 'Sentrix_ID', 'Sentrix_Position'}
 ALT_REQUIRED_HEADERS = {'Sample_Name', 'SentrixBarcode_A', 'SentrixPosition_A'}
-
-
-@deprecation.deprecated()
-def get_sample_sheet_s3(zip_reader):
-    """ reads a zipfile and considers all filenames with 'sample_sheet' but will test all csv.
-    the zip_reader is an amazon S3ZipReader object capable of reading the zipfile header."""
-    ext_matched = [
-        file_name
-        for file_name in zip_reader.file_names
-        if PurePath(file_name).suffix == '.csv'
-    ]
-
-    name_matched = [
-        file_name
-        for file_name in ext_matched
-        if 'sample_sheet' in file_name.lower()
-        or 'samplesheet' in file_name.lower()
-    ]
-
-    candidates = name_matched or ext_matched
-    for file_name in candidates:
-        sample_sheet_obj = zip_reader.get_file(file_name)
-        if SampleSheet.is_sample_sheet(sample_sheet_obj):
-            data_dir = PurePath(file_name).parent
-            return SampleSheet(sample_sheet_obj, data_dir)
-    raise FileNotFoundError('Could not find sample sheet in s3 file.')
-
-
-def find_sample_sheet(dir_path, return_all=False):
-    """Find sample sheet file for Illumina methylation array.
-
-    Notes:
-        looks for csv files in {dir_path}.
-        If more than one csv file found, returns the one
-        that has "sample_sheet" or 'samplesheet' in its name.
-        Otherwise, raises error.
-
-    Arguments:
-        dir_path {string or path-like} -- Base directory of the sample sheet and associated IDAT files.
-        return_all -- if True,
-            returns a list of paths to samplesheets, if multiple present, instead of raising an error.
-
-    Raises:
-        FileNotFoundError: [description]
-        Exception: [description]
-
-    Returns:
-        [string] -- Path to sample sheet in base directory
-    """
-    LOGGER.debug('Searching for sample_sheet in %s', dir_path)
-
-    sample_dir = Path(dir_path)
-
-    if not sample_dir.is_dir():
-        raise FileNotFoundError(f'{dir_path} is not a valid directory path')
-
-    csv_files = sample_dir.rglob('*.csv')
-    candidates = [
-        csv_file for csv_file in csv_files
-        if SampleSheet.is_valid_csv(csv_file)
-        and SampleSheet.is_sample_sheet(csv_file)
-        and 'sample' in str(csv_file).lower()
-        and 'sheet' in str(csv_file).lower()
-    ]
-
-    num_candidates = len(candidates)
-
-    if num_candidates == 0:
-        errors = [
-            {'name': csv_file.name,
-            'has_headers': SampleSheet.is_valid_csv(csv_file),
-            'pandas_can_open': SampleSheet.is_sample_sheet(csv_file)}
-            for csv_file in csv_files
-        ]
-        if errors == []:
-            raise FileNotFoundError(f"Could not find sample sheet.")
-        else:
-            raise FileNotFoundError(f"Could not find sample sheet. (candidate files: {errors})")
-
-    if num_candidates > 1:
-        name_matched = [
-            file_name
-            for file_name in candidates
-            if 'sample_sheet' in file_name.stem.lower()
-            or 'samplesheet' in file_name.stem.lower()
-        ]
-        if len(name_matched) == 1:
-            pass
-        else:
-            if return_all:
-                return name_matched
-            else:
-                raise Exception(f"Too many sample sheets in this directory. Move or rename redundant ones. Or specify the path to the one to use with --sample_sheet. (candidate files: {candidates})")
-
-    sample_sheet_file = candidates[0]
-    LOGGER.debug('Found sample sheet file: %s', sample_sheet_file)
-    return sample_sheet_file
-
-
-
-def sample_names_from_matrix(dir_path, ordered_GSMs=None):
-    """Extracts sample names from a GEO Series Matrix File and returns them in the order of the inputted GSM_IDs
-
-    Arguments:
-        dir_path {string or path-like} -- Base directory of the sample sheet and associated IDAT files.
-        ordered_GSMs {list of strings} -- List of ordered GSM_IDs
-
-    Raises:
-        FileNotFoundError: The Series Matrix file could not be found
-
-    Returns:
-        [list of strings] -- Ordered Sample Names
-    """
-
-    sample_dir = Path(dir_path)
-    matrix_files = list(sample_dir.glob('*matrix.txt'))
-    if len(matrix_files) == 0:
-        raise FileNotFoundError('No Series Matrix file found')
-
-    f = open(matrix_files[0], "r") # loads the first matching one
-    line = f.readline()
-
-    sample_geo_accession = ''
-    sample_title = ''
-    while line:
-        if "!Sample_title" in line:
-            sample_title = line
-            # print(line)
-        if "!Sample_geo_accession" in line:
-            sample_geo_accession = line
-        if "!series_matrix_table_begin" in line:
-            break
-        line = f.readline()
-
-    # in the matrix file, two consecutive lines contain quoted strings, separated by spaces with all the sample names and GSM IDs, respectively.
-    unordered_Sample_Names = (re.findall(r'"(.*?)"', sample_title))
-    unordered_GSMs = (re.findall(r'"(.*?)"', sample_geo_accession))
-    GSM_to_name = dict(zip(unordered_GSMs, unordered_Sample_Names))
-    if ordered_GSMs:
-        ordered_Sample_Names = [GSM_to_name.get(GSM,'') for GSM in ordered_GSMs]
-        return ordered_Sample_Names
-    else:
-        return unordered_Sample_Names
-
-
 
 
 
@@ -197,19 +52,10 @@ class SampleSheet():
             self.find_idat_files(path, recursive)
 
     def add_sample(self, idat_grn, idat_red):
-        s = Sample(
-                data_dir = ".",  # this assumes the .idat files are in the same folder with the samplesheet.
-                sentrix_id = "12312312",
-                sentrix_position = "C11B44",
-                channel_grn = idat_grn.filepath_or_buffer.strip(),
-                channel_red = idat_red.filepath_or_buffer.strip(),
-                #Sample_Name = "naam2",
-                #name = "name"
-            )
         at = ArrayType.from_probe_count(idat_grn.n_snps_read)
         mf = manifest_cache.get(at)
         
-        sigset = SigSet(s, idat_grn, idat_red, mf)
+        sigset = SigSet(idat_grn, idat_red, mf)
         
         self.__samples.append(sigset)
 

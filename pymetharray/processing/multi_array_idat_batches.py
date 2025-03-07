@@ -9,7 +9,7 @@ import shutil
 from collections import Counter
 # App
 from ..models.sigset import parse_sample_sheet_into_idat_datasets
-from ..files import find_sample_sheet, create_sample_sheet, SampleSheet
+from ..files import SampleSheet
 
 LOGGER = logging.getLogger(__name__)
 

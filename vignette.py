@@ -62,9 +62,11 @@ for sample in ss:
             #debug=kwargs.get('debug',False),
             sesame=True,
             pneg_ecdf=False,
-            file_format='pickle'
+            file_format='pickle' # should move into the export function?
         )
+    
     data_container.process_all()
+    data_container.export("cache/out.txt") # apparently caches to a path and not a pkl file
 
 
 

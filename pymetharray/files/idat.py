@@ -176,6 +176,28 @@ class IdatDataset():
                 self.meta(idat_file)
 
     @beartype
+    def get_barcode(self) -> str | None:
+        return self.barcode
+    
+    @beartype
+    def get_label(self) -> str | None:
+        return self.label
+    
+    @beartype
+    def __str__(self) -> str:
+        out = ""
+        
+        tmp = self.get_barcode()
+        if tmp:
+            out += tmp
+            
+        tmp = self.get_label()
+        if tmp:
+            out += "_" + tmp
+
+        return out
+
+    @beartype
     @staticmethod
     @read_and_reset
     def is_idat_file(idat_file, expected) -> bool:

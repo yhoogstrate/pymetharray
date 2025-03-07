@@ -44,8 +44,8 @@ ss = SampleSheet("cache/", recursive=False)
 
 for sample in ss:
     print(" - Sample: "+str(sample))
-    #print("   :: " + sample.green_idat)
-    #print("   :: " + sample.red_idat)
+    print("   :: " + str(sample.green_idat))
+    print("   :: " + str(sample.red_idat))
     
     data_container = SampleDataContainer(
             idat_dataset_pair={'green_idat': sample.green_idat, 'red_idat': sample.red_idat, 'sample': sample.sample},

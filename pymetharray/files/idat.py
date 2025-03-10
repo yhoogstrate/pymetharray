@@ -30,6 +30,7 @@ handler.setFormatter(formatter)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel( logging.DEBUG ) # Should not be located in this class
+LOGGER.handlers.clear()
 LOGGER.addHandler(handler)
 
 
@@ -364,10 +365,10 @@ class IdatDataset():
                 data_frame = data_frame.clip(upper=32127)
                 data_frame = data_frame.astype('int16')
 
-            LOGGER.debug("Done deep reading")
+            LOGGER.debug(" - Done deep reading")
             return data_frame
         else:
-            LOGGER.debug("Done reading")
+            LOGGER.debug(" - Done reading")
             return None
 
 

@@ -206,7 +206,7 @@ class SigSet():
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
         """
         
-        LOGGER.info("SigSet init: Grn: " + green_idat.get_sentrix_id() + " -- Red: " +  red_idat.get_sentrix_id())
+        LOGGER.info("__init__: Grn: " + green_idat.get_sentrix_id() + " -- Red: " +  red_idat.get_sentrix_id())
         
         assert(green_idat.get_sentrix_id() == red_idat.get_sentrix_id())
         
@@ -217,8 +217,12 @@ class SigSet():
         
         if not shallow:
             self.load()
+        
+        LOGGER.info(" - Done init")
 
     def load(self, debug:bool = False):
+        LOGGER.info("Load()")
+        
         snps_read = {self.green_idat.n_snps_read,
                      self.red_idat.n_snps_read}
                      
@@ -362,6 +366,8 @@ class SigSet():
         self.starting_probe_counts = {subset: getattr(self, subset).shape[0] for subset in self.subsets.keys()} # DEBUGGING
         self.detect_and_drop_duplicates()
         if debug: self.check_for_probe_loss()
+        
+        LOGGER.info(" - Done load()")
 
     def get_sentrix_id(self):
         return self.green_idat.get_sentrix_id() # grn & red have been validated to be identical

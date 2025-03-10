@@ -27,7 +27,7 @@ from pymetharray.processing import SampleDataContainer
 
 # logging
 logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 #logging.setLevel(logging.DEBUG)
 
 
@@ -37,8 +37,6 @@ ss = SampleSheet("cache/", recursive=False)
 
 
 for sample in ss:
-    print(" - Sample: "+str(sample.get_sentrix_id()))
-    
     sample.load() # should be ran using a getter
     data_container = SampleDataContainer(
             idat_dataset_pair={

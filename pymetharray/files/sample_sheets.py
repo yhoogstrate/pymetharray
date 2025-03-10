@@ -20,7 +20,16 @@ from ..files import Manifest, manifest_cache, IdatDataset
 __all__ = ['SampleSheet']
 
 
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel( logging.DEBUG ) # Should not be located in this class
+LOGGER.handlers.clear()
+LOGGER.addHandler(handler)
+
 
 
 class SampleSheet():
@@ -79,6 +88,8 @@ class SampleSheet():
             
             self.add_sample(test_grn, test_red)
             n += 1
+        
+        LOGGER.debug(' Done scanning path: '+str(path))
         
         return n
 

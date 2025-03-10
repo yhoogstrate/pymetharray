@@ -18,7 +18,17 @@ from collections import Counter
 __all__ = ['SigSet', 'parse_sample_sheet_into_idat_datasets', 'RawMetaDataset']
 
 
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+LOGGER.handlers.clear()
+LOGGER.addHandler(handler)
+
+
 
 def get_array_type(idat_dataset_pairs):
     """ provide a list of idat_dataset_pairs and it will return the array type, confirming probe counts match in batch. """
@@ -221,11 +231,13 @@ class SigSet():
         LOGGER.info(" - Done init")
 
     def load(self, debug:bool = False):
-        LOGGER.info("Load()")
+        LOGGER.info("load()")
         
         snps_read = {self.green_idat.n_snps_read,
                      self.red_idat.n_snps_read}
-                     
+        
+        LOGGER.debug("checkpoint 1/10")
+        
         if len(snps_read) > 1:
             raise ValueError('IDAT files have a varying number of probes (comparing Grn to Red channel)')
         
@@ -248,6 +260,7 @@ class SigSet():
         self.snp_man = self.manifest.snp_data_frame.set_index('IlmnID')
         self.ctl_man = self.manifest.control_data_frame
         
+        LOGGER.debug("checkpoint 2/10")
         
         self.ctrl_green = self.ctl_man.merge(
             self.green_idat.get_probe_means().astype('float32'),
@@ -256,6 +269,7 @@ class SigSet():
             self.red_idat.get_probe_means().astype('float32'),
             how='inner', left_index=True, right_index=True)
         
+        LOGGER.debug("checkpoint 3/10")
         
         #self.array_type = self.manifest.array_type
         if self.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
@@ -282,7 +296,8 @@ class SigSet():
         fg_red   439223 |vs| ibR 439279 (incl 40 + 16 SNPs) --(flattened)--> 528482
         """
 
-        LOGGER.debug('DEBUG comparing [manifest probe_IDs vs idat probe_means]')
+        LOGGER.debug("checkpoint 4/10")
+
 
         for subset, decoder_parts in self.subsets.items():
             data_frames = {}
@@ -363,11 +378,15 @@ class SigSet():
             except Exception as e:
                 raise Exception(f"SigSet: {e}")
 
+        LOGGER.debug("checkpoint 5/10")
+
         self.starting_probe_counts = {subset: getattr(self, subset).shape[0] for subset in self.subsets.keys()} # DEBUGGING
+        LOGGER.debug("checkpoint 6/10")
         self.detect_and_drop_duplicates()
+        LOGGER.debug("checkpoint 7/10")
         if debug: self.check_for_probe_loss()
         
-        LOGGER.info(" - Done load()")
+        LOGGER.info(" - Done loading()")
 
     def get_sentrix_id(self):
         return self.green_idat.get_sentrix_id() # grn & red have been validated to be identical
@@ -554,6 +573,8 @@ class SigSet():
         which theoretically should never happen in mouse. But infer-probes affects the idat probe_means directly,
         and runs before SigSet is created in SampleDataContainer, to avoid double-reading confusion.
         """
+        LOGGER.debug("detect and drop duplicated")
+        
         probe_count = 0
         # (1) look for dupes within a subset; mouse.methylated has 2 to drop
         for subset in self.subsets:
@@ -564,8 +585,9 @@ class SigSet():
                 setattr(self, subset, this)
                 this = getattr(self, subset)
                 probe_count += pre
-                if self.debug:
-                    LOGGER.info(f"Dropped duplicate probes from SigSet.{subset}: {pre} --> {this.index.duplicated().sum()}")
+                
+                LOGGER.debug(f"Dropped duplicate probes from SigSet.{subset}: {pre} --> {this.index.duplicated().sum()}")
+
 
         # (2) look between paired subsets; the index probe names should match exactly.
         # but if idat probe_means is missing for one or the other (AddressA_ID / AddressB_ID error?)
@@ -590,6 +612,8 @@ class SigSet():
                 mismatched = list(set(getattr(self, partB).index) - set(getattr(self, partA).index))
                 this = this.loc[ ~this.index.isin(mismatched) ]
                 setattr(self, partB, this)
+        
+        LOGGER.debug(" - Done detecting and drop duplicated")
 
     def check_for_probe_loss(self, stage=''):
         """Debugger runs this during processing to see where mouse probes go missing or get duplicated."""

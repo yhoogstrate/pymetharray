@@ -41,7 +41,17 @@ from ..files.sample_sheets import SampleSheet
 
 __all__ = ['SampleDataContainer', 'run_pipeline', 'consolidate_values_for_sheet', 'make_pipeline']
 
+
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel( logging.DEBUG ) # Should not be located in this class
+LOGGER.handlers.clear()
+LOGGER.addHandler(handler)
+
 
 
 @beartype
@@ -1075,6 +1085,8 @@ class SampleDataContainer(SigSet):
                  bit='float32', pval=False, poobah_decimals=3, poobah_sig=0.05, do_noob=True,
                  quality_mask=True, switch_probes=True, do_nonlinear_dye_bias=True, debug=False, sesame=True,
                  pneg_ecdf=False, file_format='csv'):
+        LOGGER.debug("__init__")
+
         self.debug = debug
         self.do_noob = do_noob
         self.pval = pval
@@ -1127,6 +1139,8 @@ class SampleDataContainer(SigSet):
                 else:
                     print(f"-- {key}: {value}")
             self.check_for_probe_loss()
+        
+        LOGGER.debug(" - Done __init__")
 
     def process_all(self):
         """Runs all pre and post-processing calculations for the dataset.

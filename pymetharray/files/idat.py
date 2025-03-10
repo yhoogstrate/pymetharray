@@ -22,8 +22,17 @@ from ..utils import (
 )
 
 
+
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel( logging.DEBUG )
+LOGGER.setLevel( logging.DEBUG ) # Should not be located in this class
+LOGGER.addHandler(handler)
+
+
 
 __all__ = ['IdatDataset']
 
@@ -273,7 +282,7 @@ class IdatDataset():
             DataFrame -- mean probe intensity values indexed by Illumina ID.
         """
 
-        LOGGER.debug("Parse IdatDataset (" + ("shallow" if header_only else "deep") + "): " + str(self.filepath_or_buffer))
+        LOGGER.debug("Parsing " + ("shallow" if header_only else "deep") + ": " + str(self.filepath_or_buffer))
         
         section_offsets = self.get_section_offsets(idat_file)
 
@@ -355,8 +364,10 @@ class IdatDataset():
                 data_frame = data_frame.clip(upper=32127)
                 data_frame = data_frame.astype('int16')
 
+            LOGGER.debug("Done deep reading")
             return data_frame
         else:
+            LOGGER.debug("Done reading")
             return None
 
 

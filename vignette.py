@@ -6,11 +6,7 @@ Install & prep test:
 virtualenv -p python3 .venv
 source .venv/bin/activate
 
-
-pip install uninstall pymetharray
-pip install .
-pip list | grep pymetharray
-
+pip install -r requirements.txt
 """
 
 
@@ -19,17 +15,24 @@ pytest tests
 """
 
 
-
-
+# app
 from pathlib import Path
 import logging
 
-logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
-
+# lib
 from pymetharray.files import SampleSheet
 from pymetharray.processing import SampleDataContainer
+
+
+# logging
+logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+#logging.setLevel(logging.DEBUG)
+
+
+
+# code
 ss = SampleSheet("cache/", recursive=False)
 
 

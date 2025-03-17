@@ -2,6 +2,8 @@
 import logging
 import pandas as pd
 import numpy as np
+from beartype import beartype
+
 # App
 from ..models import (
     ArrayType,
@@ -16,7 +18,17 @@ from collections import Counter
 __all__ = ['SigSet', 'parse_sample_sheet_into_idat_datasets', 'RawMetaDataset']
 
 
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+LOGGER.handlers.clear()
+LOGGER.addHandler(handler)
+
+
 
 def get_array_type(idat_dataset_pairs):
     """ provide a list of idat_dataset_pairs and it will return the array type, confirming probe counts match in batch. """
@@ -197,49 +209,70 @@ class SigSet():
     }
     # after __init__, SigSet will have class variables for each of the keys in subsets above.
 
-    def __init__(self, sample, green_idat, red_idat, manifest, debug:bool = False):
+    @beartype
+    def __init__(self, green_idat: IdatDataset, red_idat: IdatDataset, manifest, shallow:bool = True, debug:bool = False):
         """ green_idat has .probe_means and .meta as main functions
         and for extra info, use extra kwargs:
         red= m.files.IdatDataset('9247377093_R02C01_Red.idat', m.models.Channel.RED, verbose=True, std_dev=True, nbeads=True)
         """
         
+        LOGGER.info("__init__: Grn: " + green_idat.get_sentrix_id() + " -- Red: " +  red_idat.get_sentrix_id())
+        
+        assert(green_idat.get_sentrix_id() == red_idat.get_sentrix_id())
+        
         self.debug = debug
-        self.sample = sample # Sample() object, represeting entry in (not existing) SampleSheet file
         self.manifest = manifest
         self.green_idat = green_idat
         self.red_idat = red_idat
+        
+        if not shallow:
+            self.load()
+        
+        LOGGER.info(" - Done init")
 
-        snps_read = {green_idat.n_snps_read, red_idat.n_snps_read}
+    def load(self, debug:bool = False):
+        LOGGER.info("load()")
+        
+        snps_read = {self.green_idat.n_snps_read,
+                     self.red_idat.n_snps_read}
+        
+        LOGGER.debug("checkpoint 1/10")
+        
         if len(snps_read) > 1:
             raise ValueError('IDAT files have a varying number of probes (comparing Grn to Red channel)')
-        if (str(green_idat.channel) != 'Grn' or str(red_idat.channel) != 'Red'):
+        
+        if (str(self.green_idat.channel) != 'Grn' or str(self.red_idat.channel) != 'Red'):
             raise ValueError("The IDAT files you supplied seem to be reversed. Check the order of your inputs to SigSet")
+        
         self.n_snps_read = snps_read.pop()
         # DEBUG
         #self.array_type = ArrayType.from_probe_count(self.n_snps_read)
 
         # these next two should be unnecessary, because nothing should be reading idats downstream; use self.data_channel instead
         self.data_channel = {
-            'GREEN': green_idat.get_probe_means(),
-            'RED':   red_idat.get_probe_means()} # indexed to illumina_ids
-        # illumina_ids are all II means, plus a stacked list of type-I-AddressA and type-I-AddressB means
-        self.sample = sample
-        self.man = manifest.data_frame # relevant columns are 'probe_type', AddressA_ID, AddressB_ID, index, Color_Channel
-        self.man = self.man[ ~self.man.index.str.startswith('rs') ] # snp_man covers these
-        self.snp_man = manifest.snp_data_frame.set_index('IlmnID')
-        self.ctl_man = manifest.control_data_frame
+            'GREEN': self.green_idat.get_probe_means(),
+            'RED':   self.red_idat.get_probe_means()
+        } # indexed to illumina_ids
         
+        # illumina_ids are all II means, plus a stacked list of type-I-AddressA and type-I-AddressB means
+        self.man = self.manifest.data_frame # relevant columns are 'probe_type', AddressA_ID, AddressB_ID, index, Color_Channel
+        self.man = self.man[ ~self.man.index.str.startswith('rs') ] # snp_man covers these
+        self.snp_man = self.manifest.snp_data_frame.set_index('IlmnID')
+        self.ctl_man = self.manifest.control_data_frame
+        
+        LOGGER.debug("checkpoint 2/10")
         
         self.ctrl_green = self.ctl_man.merge(
-            green_idat.get_probe_means().astype('float32'),
+            self.green_idat.get_probe_means().astype('float32'),
             how='inner', left_index=True, right_index=True)
         self.ctrl_red = self.ctl_man.merge(
-            red_idat.get_probe_means().astype('float32'),
+            self.red_idat.get_probe_means().astype('float32'),
             how='inner', left_index=True, right_index=True)
         
+        LOGGER.debug("checkpoint 3/10")
         
-        self.array_type = manifest.array_type
-        if self.array_type == ArrayType.ILLUMINA_MOUSE:
+        #self.array_type = self.manifest.array_type
+        if self.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
             self.mouse_probes_mask = ( (self.man['design'] == 'Multi')  | (self.man['design'] == 'Random') )
         else:
             self.mouse_probes_mask = None
@@ -263,7 +296,8 @@ class SigSet():
         fg_red   439223 |vs| ibR 439279 (incl 40 + 16 SNPs) --(flattened)--> 528482
         """
 
-        if debug: print('DEBUG comparing [manifest probe_IDs vs idat probe_means]')
+        LOGGER.debug("checkpoint 4/10")
+
 
         for subset, decoder_parts in self.subsets.items():
             data_frames = {}
@@ -283,8 +317,10 @@ class SigSet():
                 probe_means = self.data_channel[i['data_channel']] # starts with all 361821 mouse probes here, keyed to illumina_ids
                 probe_means = probe_means.reset_index() # index is Nth row; illumina_id now a column that can be redundant
                 probe_means = probe_means[ probe_means.illumina_id.isin(probe_ids) ]
+                
                 if len(probe_ids) == 0:
                     LOGGER.error(f"SigSet.init(): no probes matched for {subset}:{part}")
+                
                 #************ DEBUG ***********#
                 if debug:
                     #print(f"DEBUG duplicated probe_ids (from manifest): {len( probe_ids[probe_ids.duplicated(keep=False)] )}")
@@ -342,9 +378,18 @@ class SigSet():
             except Exception as e:
                 raise Exception(f"SigSet: {e}")
 
+        LOGGER.debug("checkpoint 5/10")
+
         self.starting_probe_counts = {subset: getattr(self, subset).shape[0] for subset in self.subsets.keys()} # DEBUGGING
+        LOGGER.debug("checkpoint 6/10")
         self.detect_and_drop_duplicates()
+        LOGGER.debug("checkpoint 7/10")
         if debug: self.check_for_probe_loss()
+        
+        LOGGER.info(" - Done loading()")
+
+    def get_sentrix_id(self):
+        return self.green_idat.get_sentrix_id() # grn & red have been validated to be identical
 
     # originally was `set_bg_corrected` from MethylationDataset | called by NOOB
     def update_probe_means(self, noob_green, noob_red, red_factor=None):
@@ -528,6 +573,8 @@ class SigSet():
         which theoretically should never happen in mouse. But infer-probes affects the idat probe_means directly,
         and runs before SigSet is created in SampleDataContainer, to avoid double-reading confusion.
         """
+        LOGGER.debug("detect and drop duplicated")
+        
         probe_count = 0
         # (1) look for dupes within a subset; mouse.methylated has 2 to drop
         for subset in self.subsets:
@@ -538,8 +585,9 @@ class SigSet():
                 setattr(self, subset, this)
                 this = getattr(self, subset)
                 probe_count += pre
-                if self.debug:
-                    LOGGER.info(f"Dropped duplicate probes from SigSet.{subset}: {pre} --> {this.index.duplicated().sum()}")
+                
+                LOGGER.debug(f"Dropped duplicate probes from SigSet.{subset}: {pre} --> {this.index.duplicated().sum()}")
+
 
         # (2) look between paired subsets; the index probe names should match exactly.
         # but if idat probe_means is missing for one or the other (AddressA_ID / AddressB_ID error?)
@@ -564,6 +612,8 @@ class SigSet():
                 mismatched = list(set(getattr(self, partB).index) - set(getattr(self, partA).index))
                 this = this.loc[ ~this.index.isin(mismatched) ]
                 setattr(self, partB, this)
+        
+        LOGGER.debug(" - Done detecting and drop duplicated")
 
     def check_for_probe_loss(self, stage=''):
         """Debugger runs this during processing to see where mouse probes go missing or get duplicated."""
@@ -577,3 +627,5 @@ class SigSet():
                 if self.debug:
                     count_lost = self.starting_probe_counts[subset] - getattr(self, subset).shape[0]
                     LOGGER.info(f"[ {count_lost} probes lost from SigSet.{subset} ]")
+    
+

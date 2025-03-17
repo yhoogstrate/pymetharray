@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from statsmodels import robust
 from scipy.stats import norm, lognorm
+
 # App
 from ..models import ControlType, ArrayType
 from ..models.sketchy_probes import qualityMask450, qualityMaskEPIC, qualityMaskEPICPLUS, qualityMaskmouse
@@ -97,8 +98,8 @@ def preprocess_noob(container, offset=15, pval_probes_df=None, quality_mask_df=N
             print(f"oob: Set {oobR_affected} red and {oobG_affected} green to 1.0 ({len(oobR[ oobR['mean_value'] == 1 ].index)}, {len(oobG[ oobG['mean_value'] == 1 ].index)})")
 
     # do background correction in each channel; returns "normalized in-band signal"
-    ibG_nl, params_green = normexp_bg_corrected(ibG, oobG, offset, sample_name=container.sample.name)
-    ibR_nl, params_red   = normexp_bg_corrected(ibR, oobR, offset, sample_name=container.sample.name)
+    ibG_nl, params_green = normexp_bg_corrected(ibG, oobG, offset)
+    ibR_nl, params_red   = normexp_bg_corrected(ibR, oobR, offset)
     noob_green = ibG_nl.round({'bg_corrected':0})
     noob_red = ibR_nl.round({'bg_corrected':0})
 
@@ -155,7 +156,7 @@ def normexp_bg_corrected(fg_probes, ctrl_probes, offset, sample_name=None):
     """ analogous to sesame's backgroundCorrectionNoobCh1 """
     fg_means = fg_probes['mean_value']
     if fg_means.min() == fg_means.max():
-        LOGGER.error(f"{sample_name}: min and max intensity are same. Sample probably bad.")
+        LOGGER.error(f"min and max intensity are same. Sample probably bad.")
         params = BackgroundCorrectionParams(bg_mean=1.0, bg_mad=1.0, mean_signal=1.0, offset=15)
         fg_probes['bg_corrected'] = 1.0
         return fg_probes, params
@@ -269,7 +270,9 @@ def _apply_sesame_quality_mask(data_container):
         to use TCGA masking, only applies to HM450
 
     """
-    if data_container.array_type not in (
+    
+    
+    if data_container.manifest.array_type not in (
         # ArrayType.ILLUMINA_27K,
         ArrayType.ILLUMINA_450K,
         ArrayType.ILLUMINA_EPIC,
@@ -278,14 +281,14 @@ def _apply_sesame_quality_mask(data_container):
         LOGGER.info(f"Quality masking is not supported for {data_container.array_type}.")
         return
     # load set of probes to remove from local file
-    if data_container.array_type == ArrayType.ILLUMINA_450K:
+    if data_container.manifest.array_type == ArrayType.ILLUMINA_450K:
         probes = qualityMask450
-    elif data_container.array_type == ArrayType.ILLUMINA_EPIC:
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_EPIC:
         probes = qualityMaskEPIC
-    elif data_container.array_type == ArrayType.ILLUMINA_EPIC_PLUS:
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_EPIC_PLUS:
         # this is a bit of a hack; probe names don't match epic, so I'm temporarily renaming, then filtering, then reverting.
         probes = qualityMaskEPICPLUS
-    elif data_container.array_type == ArrayType.ILLUMINA_MOUSE:
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
         probes = qualityMaskmouse
 
     # v1.6+: the 1.0s are good probes and the 0.0 are probes to be excluded.

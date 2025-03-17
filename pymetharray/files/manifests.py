@@ -1,9 +1,16 @@
+#!/usr/bin/env python
+
 # Lib
+from beartype import beartype
+
 import logging
 from pathlib import Path
 from urllib.parse import urljoin
 import numpy as np
 import pandas as pd
+import os
+import pickle
+
 # App
 from ..models import ArrayType, Channel, ProbeType
 from ..utils import (
@@ -15,7 +22,7 @@ from ..utils import (
 )
 
 
-__all__ = ['Manifest']
+__all__ = ['Manifest', "ManifestCace", "manifest_cache"]
 
 
 LOGGER = logging.getLogger(__name__)
@@ -114,18 +121,26 @@ class Manifest():
         self.array_type = array_type
         self.on_lambda = on_lambda # changes filepath to /tmp for the read-only file system
         self.verbose = verbose
+        
+        fn = self.cache_filename
 
-        if filepath_or_buffer is None:
-            filepath_or_buffer = self.download_default(array_type, self.on_lambda)
+        if os.path.exists(fn):
+            self.from_cache()
+        else:
 
-        with get_file_object(filepath_or_buffer) as manifest_file:
-            self.__data_frame = self.read_probes(manifest_file)
-            self.__control_data_frame = self.read_control_probes(manifest_file)
-            self.__snp_data_frame = self.read_snp_probes(manifest_file)
-            if self.array_type == ArrayType.ILLUMINA_MOUSE:
-                self.__mouse_data_frame = self.read_mouse_probes(manifest_file)
-            else:
-                self.__mouse_data_frame = pd.DataFrame()
+            if filepath_or_buffer is None:
+                filepath_or_buffer = self.download_default(array_type, self.on_lambda)
+
+            with get_file_object(filepath_or_buffer) as manifest_file:
+                self.__data_frame = self.read_probes(manifest_file)
+                self.__control_data_frame = self.read_control_probes(manifest_file)
+                self.__snp_data_frame = self.read_snp_probes(manifest_file)
+                if self.array_type == ArrayType.ILLUMINA_MOUSE:
+                    self.__mouse_data_frame = self.read_mouse_probes(manifest_file)
+                else:
+                    self.__mouse_data_frame = pd.DataFrame()
+            
+            self.to_cache()
 
     @property
     def columns(self):
@@ -335,3 +350,67 @@ class Manifest():
 
         channel_mask = data_frame['Color_Channel'].values == channel.value
         return data_frame[probe_type_mask & channel_mask]
+    
+    @property
+    def cache_filename(self):
+        dir_path = Path(MANIFEST_DIR_PATH).expanduser()
+        filename = "manifest_" + str(self.array_type) + ".cache.pkl"
+        filepath = Path(dir_path).joinpath(filename)
+        
+        return filepath
+    
+    def to_cache(self):
+        fn = self.cache_filename
+        
+        LOGGER.info("Exporting Manifest " + str(self.array_type) + " to: "+ str(fn))
+        
+        out = {
+            'array_type': self.array_type,
+            'data_frame': self.__data_frame,
+            'control_data_frame': self.__control_data_frame,
+            'snp_data_frame': self.__snp_data_frame,
+            'mouse_data_frame': self.__mouse_data_frame
+        }
+        
+        with open(fn, 'wb') as fh:
+            pickle.dump(out, fh)
+
+
+    def from_cache(self):
+        fn = self.cache_filename
+        
+        LOGGER.info("Importing Manifest " + str(self.array_type) + " to: "+ str(fn))
+        
+        with open(fn, 'rb') as fh:
+            cache = pickle.load(fh)
+        
+        assert(self.array_type == cache['array_type'])
+        
+        self.__data_frame = cache['data_frame']
+        self.__control_data_frame = cache['control_data_frame']
+        self.__snp_data_frame = cache['snp_data_frame']
+        self.__mouse_data_frame = cache['mouse_data_frame']
+
+
+class ManifestCache:
+    """
+    Class to keep 1 copy per manifest into mem
+    """
+    
+    def __init__(self):
+        self.__cache = {}
+    
+    @beartype
+    def get(self, array_type) -> Manifest:
+        if array_type not in self.__cache:
+            self.__cache[array_type] = Manifest(array_type)
+        
+        return self.__cache[array_type]
+
+    @beartype
+    def __str__(self) -> str:
+        return "\n".join(["- "+str(_) for _ in sorted(self.__cache.keys())])
+            
+
+
+manifest_cache = ManifestCache()

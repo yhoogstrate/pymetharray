@@ -11,7 +11,7 @@ import deprecation
 from beartype import beartype
 
 # App
-from ..files import Manifest, get_sample_sheet, create_sample_sheet
+from ..files import Manifest
 from ..models import (
     Channel,
     #MethylationDataset,
@@ -41,7 +41,17 @@ from ..files.sample_sheets import SampleSheet
 
 __all__ = ['SampleDataContainer', 'run_pipeline', 'consolidate_values_for_sheet', 'make_pipeline']
 
+
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel( logging.DEBUG ) # Should not be located in this class
+LOGGER.handlers.clear()
+LOGGER.addHandler(handler)
+
 
 
 @beartype
@@ -364,7 +374,7 @@ def run_pipeline_ss(sample_sheet: SampleSheet, array_type=None, export=False, ou
                     missing_probe_errors['raw'].extend(data_container.raw_processing_missing_probe_errors)
 
             if save_control: # Process and consolidate now. Keep in memory. These files are small.
-                sample_id = f"{data_container.sample.sentrix_id}_{data_container.sample.sentrix_position}"
+                sample_id = self.get_sentrix_id()
                 control_df = one_sample_control_snp(data_container)
                 control_snps[sample_id] = control_df
 
@@ -1075,6 +1085,8 @@ class SampleDataContainer(SigSet):
                  bit='float32', pval=False, poobah_decimals=3, poobah_sig=0.05, do_noob=True,
                  quality_mask=True, switch_probes=True, do_nonlinear_dye_bias=True, debug=False, sesame=True,
                  pneg_ecdf=False, file_format='csv'):
+        LOGGER.debug("__init__")
+
         self.debug = debug
         self.do_noob = do_noob
         self.pval = pval
@@ -1085,7 +1097,7 @@ class SampleDataContainer(SigSet):
         self.do_nonlinear_dye_bias = do_nonlinear_dye_bias
         self.green_idat = idat_dataset_pair['green_idat']
         self.red_idat = idat_dataset_pair['red_idat']
-        self.sample = idat_dataset_pair['sample']
+        #self.sample = idat_dataset_pair['sample']
         self.retain_uncorrected_probe_intensities=retain_uncorrected_probe_intensities
         self.sesame = sesame # defines offsets in functions
         # pneg_ecdf defines if negative control based pvalue is calculated - will use poobah_decimals for rounding
@@ -1101,10 +1113,10 @@ class SampleDataContainer(SigSet):
             # these are read from idats directly, not SigSet, so need to be modified at source.
             infer_type_I_probes(self, debug=self.debug)
 
-        super().__init__(self.sample, self.green_idat, self.red_idat, self.manifest, self.debug)
+        super().__init__(self.green_idat, self.red_idat, self.manifest, self.debug)
         # SigSet defines all probe-subsets, then SampleDataContainer adds them with super(); no need to re-define below.
         # mouse probes are processed within the normals meth/unmeth sets, then split at end of preprocessing step.
-        del self.manifest
+        #del self.manifest
         del manifest
 
         if self.data_type not in ('float64','float32','float16'):
@@ -1127,6 +1139,8 @@ class SampleDataContainer(SigSet):
                 else:
                     print(f"-- {key}: {value}")
             self.check_for_probe_loss()
+        
+        LOGGER.debug(" - Done __init__")
 
     def process_all(self):
         """Runs all pre and post-processing calculations for the dataset.
@@ -1252,7 +1266,7 @@ class SampleDataContainer(SigSet):
         # normal_probes_mask = (self.manifest.data_frame.index.str.startswith('cg', na=False)) | (self.manifest.data_frame.index.str.startswith('ch', na=False))
         # v2_mouse_probes_mask = (self.manifest.data_frame.index.str.startswith('mu', na=False)) | (self.manifest.data_frame.index.str.startswith('rp', na=False))
         # v4 mouse_probes_mask pre-v1.4.6: ( (self.manifest.data_frame['Probe_Type'] == 'mu') | (self.manifest.data_frame['Probe_Type'] == 'rp') | self.manifest.data_frame.index.str.startswith('uk', na=False) )
-        if self.array_type == ArrayType.ILLUMINA_MOUSE:
+        if self.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
             mouse_probes = self.man[self.mouse_probes_mask]
             mouse_probe_count = mouse_probes.shape[0]
         else:
@@ -1288,7 +1302,7 @@ class SampleDataContainer(SigSet):
         if self.debug:
             self.check_for_probe_loss(f"816 self.check_for_probe_loss(): self.__data_frame = {self.__data_frame.shape}")
 
-        if self.array_type == ArrayType.ILLUMINA_MOUSE:
+        if self.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
             self.mouse_data_frame = self.process_beta_value(self.mouse_data_frame)
             self.mouse_data_frame = self.process_m_value(self.mouse_data_frame)
             self.mouse_data_frame = self.process_copy_number(self.mouse_data_frame)
@@ -1350,10 +1364,13 @@ class SampleDataContainer(SigSet):
         #        else:
         #            num_missing = self.__data_frame['meth'].isna().sum() + self.__data_frame['unmeth'].isna().sum()
         #        self.raw_processing_missing_probe_errors.append((output_path, num_missing))
-        if self.file_format == 'parquet':
-            this.to_parquet(output_path)
-        else:
-            this.to_csv(output_path)
+        
+        
+        this.to_pickle(output_path)
+        #if self.file_format == 'parquet':
+        #    this.to_parquet(output_path)
+        #else:
+        #    this.to_csv(output_path)
 
     def _postprocess(self, input_dataframe, postprocess_func, header, offset=None):
         if offset is not None:

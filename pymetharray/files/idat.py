@@ -22,8 +22,18 @@ from ..utils import (
 )
 
 
+
+formatter = logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)s:%(name)s:%(message)s', datefmt="%H:%M:%S")
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel( logging.INFO )
+LOGGER.setLevel( logging.DEBUG ) # Should not be located in this class
+LOGGER.handlers.clear()
+LOGGER.addHandler(handler)
+
+
 
 __all__ = ['IdatDataset']
 
@@ -148,6 +158,9 @@ class IdatDataset():
         header_only:bool=False
     ):
         """Initializes the IdatDataset, reads and parses the IDAT file."""
+        
+        LOGGER.debug("Init IdatDataset: " + str(filepath_or_buffer))
+        
         self.filepath_or_buffer = filepath_or_buffer
         self.verbose = verbose
         self.channel = channel
@@ -175,6 +188,18 @@ class IdatDataset():
             if self.verbose:
                 self.meta(idat_file)
 
+    @beartype
+    def get_barcode(self) -> str | None:
+        return self.barcode
+    
+    @beartype
+    def get_label(self) -> str | None:
+        return self.label
+    
+    @beartype
+    def get_sentrix_id(self) -> str:
+        return self.get_barcode() + "_" + self.get_label()
+    
     @beartype
     @staticmethod
     @read_and_reset
@@ -257,6 +282,9 @@ class IdatDataset():
         Returns:
             DataFrame -- mean probe intensity values indexed by Illumina ID.
         """
+
+        LOGGER.debug("Parsing " + ("shallow" if header_only else "deep") + ": " + str(self.filepath_or_buffer))
+        
         section_offsets = self.get_section_offsets(idat_file)
 
         def seek_to_section(section_code):
@@ -337,8 +365,10 @@ class IdatDataset():
                 data_frame = data_frame.clip(upper=32127)
                 data_frame = data_frame.astype('int16')
 
+            LOGGER.debug(" - Done deep reading")
             return data_frame
         else:
+            LOGGER.debug(" - Done reading")
             return None
 
 

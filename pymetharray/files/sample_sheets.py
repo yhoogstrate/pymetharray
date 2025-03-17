@@ -73,7 +73,7 @@ class SampleSheet():
         files_red = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat.gz')])
         
         if len(files_grn) != len(files_red):
-            logger.warning("Number of grn and red files found not equal")
+            LOGGER.warning("Number of grn and red files found not equal")
 
         for grn in tqdm(files_grn):
             red = grn

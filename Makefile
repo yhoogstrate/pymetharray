@@ -2,7 +2,7 @@
 .PHONY: clean all
 
 
-all: cache/GSM6379997_203927450093_R01C01_Red.idat cache/GSM6379997_203927450093_R01C01_Grn.idat cache/GSM6379998_203927450107_R07C01_Grn.idat.gz cache/GSM6379998_203927450107_R07C01_Red.idat.gz
+all: cache/GSM6379997_203927450093_R01C01_Red.idat cache/GSM6379997_203927450093_R01C01_Grn.idat cache/GSM6379998_203927450107_R07C01_Grn.idat.gz cache/GSM6379998_203927450107_R07C01_Red.idat.gz cache/TCGA-06-0875-01A_Grn.idat cache/TCGA-06-0875-01A_Red.idat
 
 
 
@@ -28,4 +28,10 @@ cache/GSM6379998_203927450107_R07C01_Red.idat.gz:
 	mkdir -p cache ;
 	wget https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM6379nnn/GSM6379998/suppl/GSM6379998_203927450107_R07C01_Red.idat.gz --output-document=cache/GSM6379998_203927450107_R07C01_Red.idat.gz
 
+cache/TCGA-06-0875-01A_Grn.idat:
+	mkdir -p cache ;
+	wget -O cache/TCGA-06-0875-01A_Grn.idat https://api.gdc.cancer.gov/data/0f325cb3-8982-4ca8-bc6f-696b46015637
 
+cache/TCGA-06-0875-01A_Red.idat:
+	mkdir -p cache ;
+	wget -O cache/TCGA-06-0875-01A_Red.idat https://api.gdc.cancer.gov/data/3d34a4bf-b43c-4fe1-8177-c5de26880ce1

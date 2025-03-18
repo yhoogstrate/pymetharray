@@ -1,5 +1,6 @@
 # Lib
 import gzip
+import zipfile
 import logging
 from pathlib import Path, PurePath
 import shutil
@@ -9,6 +10,7 @@ import ssl
 import certifi
 import re
 from beartype import beartype
+import os
 
 __all__ = [
     'download_file',
@@ -83,6 +85,8 @@ def download_file(filename:str, src_url:str, dest_dir:Path, overwrite=False) -> 
     dest_dir: folder in which to store {filename}
     """
     
+    print("url:" + str(src_url))
+    
     if not re.match(r"(http|https|sftp)://[a-zA-Z\\.-]+/.*$", src_url):# starting a regex with ^ does not seem to work in python
         ValueError()
     
@@ -116,6 +120,29 @@ def download_file(filename:str, src_url:str, dest_dir:Path, overwrite=False) -> 
             raise URLError(e)
     
     return Path(dest_path)
+
+
+
+def download_EPIC_v2_A2_manifest(filename = None):
+    fn = "EPIC-8v2-0_A2.csv"
+    
+    download_file("InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip", "https://support.illumina.com/content/dam/illumina-support/documents/downloads/productfiles/methylationepic/InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip", Path("."))
+    
+    with zipfile.ZipFile("InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip", "r") as zip_fh:
+        zip_fh.extract("MethylationEPIC v2.0 Files/" + fn)
+        if filename is not None:
+            shutil.move("MethylationEPIC v2.0 Files/" + fn, filename)
+            fn = filename
+        else:
+            shutil.move("MethylationEPIC v2.0 Files/" + fn, fn)
+        shutil.rmtree("MethylationEPIC v2.0 Files/")
+    
+        os.remove("InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip")
+        
+        return fn
+
+#fn_out = download_EPIC_v2_A2_manifest("test.csv")
+#print(fn_out)
 
 
 

@@ -86,6 +86,8 @@ class SampleSheet():
             test_grn = IdatDataset(grn, Channel.GREEN, header_only = True) # shallow reading for file validation, force reading when needed
             test_red = IdatDataset(red, Channel.RED,   header_only = True) # shallow reading for file validation, force reading when needed
             
+            assert(test_grn.get_sentrix_id() == test_red.get_sentrix_id())
+            
             self.add_sample(test_grn, test_red)
             n += 1
         

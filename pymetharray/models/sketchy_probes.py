@@ -13,10 +13,16 @@ try:
         # resource_filename context manager does not support "with"
         probe_filepath = loader(pkg_namespace, 'qualityMask450.txt.gz')
         qualityMask450 = pd.read_csv(probe_filepath)['x']
+        
         probe_filepath = loader(pkg_namespace, 'qualityMaskEPIC.txt.gz')
         qualityMaskEPIC = pd.read_csv(probe_filepath)['x']
+        
         probe_filepath = loader(pkg_namespace, 'qualityMaskEPICPLUS.txt.gz')
         qualityMaskEPICPLUS = pd.read_csv(probe_filepath)['x']
+        
+        probe_filepath = loader(pkg_namespace, 'qualityMaskEPICv2.txt.gz')
+        qualityMaskEPIC_V2 = pd.read_csv(probe_filepath)['x']
+        
         probe_filepath = loader(pkg_namespace, 'qualityMaskmouse.txt.gz')
         qualityMaskmouse = pd.read_csv(probe_filepath)['x']
 except:
@@ -26,6 +32,8 @@ except:
         qualityMaskEPIC = pd.read_csv(probe_filepath)['x']
     with resources.path(pkg_namespace, 'qualityMaskEPICPLUS.txt.gz') as probe_filepath:
         qualityMaskEPICPLUS = pd.read_csv(probe_filepath)['x']
+    with resources.path(pkg_namespace, 'qualityMaskEPICv2.txt.gz') as probe_filepath:
+        qualityMaskEPIC_V2 = pd.read_csv(probe_filepath)['x']
     with resources.path(pkg_namespace, 'qualityMaskmouse.txt.gz') as probe_filepath:
         qualityMaskmouse = pd.read_csv(probe_filepath)['x']
 

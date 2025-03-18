@@ -15,6 +15,7 @@ import pickle
 from ..models import ArrayType, Channel, ProbeType
 from ..utils import (
     download_file,
+    download_EPIC_v2_manifest,
     get_file_object,
     inner_join_data,
     is_file_like,
@@ -41,18 +42,25 @@ ARRAY_FILENAME = {
     'epic': 'HumanMethylationEPIC_manifest_v2.csv.gz',
     #'MethylationEPIC_v-1-0_B4.CoreColumns.csv.gz',
     'epic+': 'CombinedManifestEPIC_manifest_CoreColumns_v2.csv.gz',
+    
+    # as found in https://support.illumina.com/downloads/infinium-methylationepic-v2-0-product-files.html :
+    'epicv2': 'EPIC-8v2-0_A1.csv', # download seems to crash from bucket
+    
     #'CombinedManifestEPIC.manifest.CoreColumns.csv.gz',
     'mouse': 'MM285_manifest_v3.csv.gz',
     #'MM285_mm39_manifest_v2.csv.gz',
     ###### BE SURE TO ALSO UPDATE arrays.py ArrayType.num_controls if updating a manifest here. #######
 }
+
 ARRAY_TYPE_MANIFEST_FILENAMES = {
     ArrayType.ILLUMINA_27K: ARRAY_FILENAME['27k'],
     ArrayType.ILLUMINA_450K: ARRAY_FILENAME['450k'],
     ArrayType.ILLUMINA_EPIC: ARRAY_FILENAME['epic'],
     ArrayType.ILLUMINA_EPIC_PLUS: ARRAY_FILENAME['epic+'],
+    ArrayType.ILLUMINA_EPIC_V2: ARRAY_FILENAME['epicv2'],
     ArrayType.ILLUMINA_MOUSE: ARRAY_FILENAME['mouse'],
 }
+
 MANIFEST_COLUMNS = (
     'IlmnID',
     'AddressA_ID',
@@ -68,6 +76,17 @@ MANIFEST_COLUMNS = (
     'OLD_MAPINFO',
     'OLD_Strand',
 )
+
+MANIFEST_COLUMNS_V2 = (
+    'IlmnID',
+    'AddressA_ID',
+    'AddressB_ID',
+    'Infinium_Design_Type',
+    'Color_Channel',
+    'Genome_Build',
+    'CHR',
+    'MAPINFO',
+    'Strand_FR')
 
 MOUSE_MANIFEST_COLUMNS = (
     'IlmnID',
@@ -146,6 +165,8 @@ class Manifest():
     def columns(self):
         if self.array_type == ArrayType.ILLUMINA_MOUSE:
             return MOUSE_MANIFEST_COLUMNS
+        elif self.array_type == ArrayType.ILLUMINA_EPIC_V2:
+            return MANIFEST_COLUMNS_V2
         else:
             return MANIFEST_COLUMNS
 
@@ -188,8 +209,12 @@ class Manifest():
         
 
         LOGGER.info(f"Downloading manifest: {Path(filename).stem}")
-        src_url = urljoin(MANIFEST_REMOTE_PATH, filename)
-        download_file(filename, src_url, dir_path)
+        
+        if array_type == ArrayType.ILLUMINA_EPIC_V2:# file absent in bucket
+            download_EPIC_v2_manifest(filepath)
+        else:
+            src_url = urljoin(MANIFEST_REMOTE_PATH, filename)
+            download_file(filename, src_url, dir_path)
 
         return filepath
 
@@ -217,7 +242,7 @@ class Manifest():
             LOGGER.info(f'Reading manifest file: {Path(manifest_file.name).stem}')
             LOGGER.debug(f' - path: {Path(manifest_file.name)}')
 
-        try:
+        if self.array_type != "27k": # this is ugly code by desing.
             data_frame = pd.read_csv(
                 manifest_file,
                 comment='[',
@@ -227,7 +252,7 @@ class Manifest():
                 # the -1 applies if the manifest has one extra row between the cg and control probes (a [Controls],,,,,, row) --- fixed in v1.5.6
                 index_col='IlmnID',
             )
-        except ValueError:
+        else:
             optional = ['OLD_CHR', 'OLD_Strand', 'OLD_Genome_Build', 'OLD_MAPINFO']
             use_columns = [col for col in self.columns if col not in optional]
             data_frame = pd.read_csv(

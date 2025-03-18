@@ -278,7 +278,7 @@ def _apply_sesame_quality_mask(data_container):
         ArrayType.ILLUMINA_EPIC,
         ArrayType.ILLUMINA_EPIC_PLUS,
         ArrayType.ILLUMINA_MOUSE):
-        LOGGER.info(f"Quality masking is not supported for {data_container.array_type}.")
+        LOGGER.info(f"Quality masking is not supported for {data_container.manifest.array_type}.")
         return
     # load set of probes to remove from local file
     if data_container.manifest.array_type == ArrayType.ILLUMINA_450K:
@@ -288,6 +288,8 @@ def _apply_sesame_quality_mask(data_container):
     elif data_container.manifest.array_type == ArrayType.ILLUMINA_EPIC_PLUS:
         # this is a bit of a hack; probe names don't match epic, so I'm temporarily renaming, then filtering, then reverting.
         probes = qualityMaskEPICPLUS
+    elif data_container.manifest.array_type == ArrayType.ILLUMINA_EPIC_V2:
+        probes = qualityMaskEPIC_V2
     elif data_container.manifest.array_type == ArrayType.ILLUMINA_MOUSE:
         probes = qualityMaskmouse
 

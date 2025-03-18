@@ -13,6 +13,7 @@ class ArrayType(Enum):
     ILLUMINA_450K = '450k'
     ILLUMINA_EPIC = 'epic'
     ILLUMINA_EPIC_PLUS = 'epic+'
+    ILLUMINA_EPIC_V2 = 'epicv2'
     ILLUMINA_MOUSE = 'mouse'
 
     def __str__(self):
@@ -21,6 +22,9 @@ class ArrayType(Enum):
     @classmethod
     def from_probe_count(cls, probe_count):
         """Determines array type using number of probes counted in raw idat file. Returns array string."""
+        if probe_count == 1105209:
+            return cls.ILLUMINA_EPIC_V2
+        
         if probe_count == 1055583 or probe_count == 868578:
             return cls.ILLUMINA_EPIC_PLUS
 
@@ -52,6 +56,7 @@ class ArrayType(Enum):
             ArrayType.ILLUMINA_27K: 27578,
             ArrayType.ILLUMINA_450K: 485577,
             ArrayType.ILLUMINA_EPIC: 865918,
+            ArrayType.ILLUMINA_EPIC_V2: 937055,
             ArrayType.ILLUMINA_MOUSE: 293199, # MM285_v2 added 615 missing probes
             ArrayType.ILLUMINA_EPIC_PLUS: 868698,
             #NOTE: if EPIC+ is not set to 868699, noob fails downstream. but there are only 868698 probes by my count.
@@ -75,6 +80,7 @@ class ArrayType(Enum):
             ArrayType.ILLUMINA_450K: 850,
             ArrayType.ILLUMINA_EPIC: 635,
             ArrayType.ILLUMINA_EPIC_PLUS: 635,
+            ArrayType.ILLUMINA_EPIC_V2: 635,
             ArrayType.ILLUMINA_MOUSE: 635 # 1966 controls in B3, and in sesame's manifest, but not in MM285_v2 or v3.
         }
         return probe_counts.get(self)

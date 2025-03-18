@@ -274,6 +274,7 @@ def nonlinear_dye_bias_correction(container, debug=False):
     #oobG = fit_func_green(container.oobG[unmeth].astype('float32').copy()) # v1.5.0+ uses noob version now, if available.
 
     if len(container.ctrl_red) == 0 or len(container.ctrl_green) == 0:
+        print(" this array has no ctrl red and ctrl green probes")
         pass # not correcting these if missing; sesame had this caveat too
     else:
         # THIS IS NOT SAVED BELOW... yet.

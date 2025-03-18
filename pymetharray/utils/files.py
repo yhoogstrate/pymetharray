@@ -14,6 +14,7 @@ import os
 
 __all__ = [
     'download_file',
+    'download_EPIC_v2_manifest',
     'ensure_directory_exists',
     'get_file_object',
     'is_file_like',
@@ -123,25 +124,38 @@ def download_file(filename:str, src_url:str, dest_dir:Path, overwrite=False) -> 
 
 
 
-def download_EPIC_v2_A2_manifest(filename = None):
-    fn = "EPIC-8v2-0_A2.csv"
+def download_EPIC_v2_manifest(filename = None):
+    #fn = "EPIC-8v2-0_A2.csv"
+    fn = "EPIC-8v2-0_A1.csv" # sure of n probes
     
     download_file("InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip", "https://support.illumina.com/content/dam/illumina-support/documents/downloads/productfiles/methylationepic/InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip", Path("."))
+    
+    def head_n(file_in, file_out, n):# first lines of file are headers
+        with open(file_in, "r") as fh_in:
+            for i in range(n):
+                next(fh_in)
+            
+            with open(file_out, "w") as fh_out:
+                for line in fh_in:
+                    fh_out.write(line)
+
     
     with zipfile.ZipFile("InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip", "r") as zip_fh:
         zip_fh.extract("MethylationEPIC v2.0 Files/" + fn)
         if filename is not None:
-            shutil.move("MethylationEPIC v2.0 Files/" + fn, filename)
+            #shutil.move("MethylationEPIC v2.0 Files/" + fn, filename)
+            head_n("MethylationEPIC v2.0 Files/" + fn, filename, 7)
             fn = filename
         else:
-            shutil.move("MethylationEPIC v2.0 Files/" + fn, fn)
+            head_n("MethylationEPIC v2.0 Files/" + fn, fn, 7)
+            #shutil.move("MethylationEPIC v2.0 Files/" + fn, fn)
         shutil.rmtree("MethylationEPIC v2.0 Files/")
     
         os.remove("InfiniumMethylationEPICv2.0ProductFiles(ZIPFormat).zip")
         
         return fn
 
-#fn_out = download_EPIC_v2_A2_manifest("test.csv")
+#fn_out = download_EPIC_v2_manifest("test.csv")
 #print(fn_out)
 
 

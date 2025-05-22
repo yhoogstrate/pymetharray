@@ -1367,7 +1367,7 @@ class SampleDataContainer(SigSet):
         
         
         #this.to_pickle(output_path)
-        dat.to_hdf(output_path, key='methylation', mode='w', complevel=2)
+        this.to_hdf(output_path, key='methylation', mode='w', complevel=2)
         #if self.file_format == 'parquet':
         #    this.to_parquet(output_path)
         #else:

@@ -85,8 +85,11 @@ class SampleSheet():
             
             test_grn = IdatDataset(grn, Channel.GREEN, header_only = True) # shallow reading for file validation, force reading when needed
             test_red = IdatDataset(red, Channel.RED,   header_only = True) # shallow reading for file validation, force reading when needed
-            
-            assert(test_grn.get_sentrix_id() == test_red.get_sentrix_id())
+
+            s1 = test_grn.get_sentrix_id()
+            s2 = test_red.get_sentrix_id()
+            if s1 != s2:
+                raise Exception("green idat ["+s1+"] and red idat ["+s2+"] do not match")
             
             self.add_sample(test_grn, test_red)
             n += 1

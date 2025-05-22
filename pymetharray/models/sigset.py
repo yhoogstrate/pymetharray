@@ -218,7 +218,10 @@ class SigSet():
         
         LOGGER.info("__init__: Grn: " + green_idat.get_sentrix_id() + " -- Red: " +  red_idat.get_sentrix_id())
         
-        assert(green_idat.get_sentrix_id() == red_idat.get_sentrix_id())
+        s1 = green_idat.get_sentrix_id()
+        s2 = red_idat.get_sentrix_id()
+        if s1 != s2:
+            raise Exception("green idat ["+s1+"] and red idat ["+s2+"] do not match")
         
         self.debug = debug
         self.manifest = manifest

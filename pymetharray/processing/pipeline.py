@@ -1366,7 +1366,8 @@ class SampleDataContainer(SigSet):
         #        self.raw_processing_missing_probe_errors.append((output_path, num_missing))
         
         
-        this.to_pickle(output_path)
+        #this.to_pickle(output_path)
+        dat.to_hdf(output_path, key='methylation', mode='w', complevel=2)
         #if self.file_format == 'parquet':
         #    this.to_parquet(output_path)
         #else:

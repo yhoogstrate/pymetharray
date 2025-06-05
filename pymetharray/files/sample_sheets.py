@@ -64,8 +64,8 @@ class SampleSheet():
         n = 0
 
         if type(path) == type({}) and 'Grn' in path and 'Red' in path:
-            files_grn = [sample_dir['Grn']]
-            files_red = [sample_dir['Red']]
+            files_grn = [path['Grn']]
+            files_red = [path['Red']]
         elif sample_dir.is_dir():
             LOGGER.debug('Scanning path: '+str(path))
             

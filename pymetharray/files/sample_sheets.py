@@ -62,7 +62,6 @@ class SampleSheet():
 
     def find_idat_files(self, path, recursive = False) -> int:
         LOGGER.debug('Scanning path: '+str(path))
-        sample_dir = Path(path)
         
         n = 0
 
@@ -70,6 +69,7 @@ class SampleSheet():
             files_grn = [sample_dir['Grn']]
             files_red = [sample_dir['Red']]
         elif sample_dir.is_dir():
+            sample_dir = Path(path)
             files_grn = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Grn.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Grn.idat.gz')])
             files_red = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat.gz')])
         else:

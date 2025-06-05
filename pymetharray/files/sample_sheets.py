@@ -66,12 +66,16 @@ class SampleSheet():
         if type(path) == type({}) and 'Grn' in path and 'Red' in path:
             files_grn = [path['Grn']]
             files_red = [path['Red']]
+            
+            use_tqdm = False
         elif sample_dir.is_dir():
             LOGGER.debug('Scanning path: '+str(path))
             
             sample_dir = Path(path)
             files_grn = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Grn.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Grn.idat.gz')])
             files_red = sorted([str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat')] + [str(_.resolve()) for _ in sample_dir.rglob('*_Red.idat.gz')])
+            
+            use_tqdm = True
         else:
             raise FileNotFoundError(f'{dir_path} is not a valid directory path')
 
@@ -79,7 +83,8 @@ class SampleSheet():
         if len(files_grn) != len(files_red):
             LOGGER.warning("Number of grn and red files found not equal")
 
-        for grn in tqdm(files_grn):
+        iterator = tqdm(files_grn) if use_tqdm else files_grn
+        for grn in iterator:
             red = grn
             red = re.sub(r"_Grn.idat.gz$", "_Red.idat.gz", red)
             red = re.sub(r"_Grn.idat$", "_Red.idat", red)

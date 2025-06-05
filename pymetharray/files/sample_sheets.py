@@ -63,7 +63,7 @@ class SampleSheet():
     def find_idat_files(self, path, recursive = False) -> int:
         n = 0
 
-        if type(sample_dir) == type({}) and 'Grn' in sample_dir and 'Red' in sample_dir:
+        if type(path) == type({}) and 'Grn' in path and 'Red' in path:
             files_grn = [sample_dir['Grn']]
             files_red = [sample_dir['Red']]
         elif sample_dir.is_dir():

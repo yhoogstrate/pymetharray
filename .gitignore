@@ -114,6 +114,5 @@ docs/example_data/epic_plus/202651080072
 docs/example_data/E-MTAB-6331
 *.idat
 *.pkl
-*.gz
 /cache
 /docs/example_data/epic_plus/test_samplesheet.csv

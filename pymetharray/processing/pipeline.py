@@ -1113,7 +1113,7 @@ class SampleDataContainer(SigSet):
             # these are read from idats directly, not SigSet, so need to be modified at source.
             infer_type_I_probes(self, debug=self.debug)
 
-        self.data_channel is not None:
+        if self.data_channel is not None:
             LOGGER.warning("already loaded, skipping")
         else:
             super().__init__(self.green_idat, self.red_idat, self.manifest, self.debug)

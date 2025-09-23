@@ -237,7 +237,7 @@ class SigSet():
     @beartype
     def load(self, debug:bool = False):
         LOGGER.info("load()")
-        if self.data_channel is None:
+        if self.data_channel is not None:
             LOGGER.warning("already loaded, skipping")
             return True
         

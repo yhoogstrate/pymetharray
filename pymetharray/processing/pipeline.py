@@ -1087,7 +1087,7 @@ class SampleDataContainer(SigSet):
                  pneg_ecdf=False, file_format='csv'):
         LOGGER.debug("__init__")
 
-        aself.debug = debug
+        self.debug = debug
         self.do_noob = do_noob
         self.pval = pval
         self.poobah_decimals = poobah_decimals

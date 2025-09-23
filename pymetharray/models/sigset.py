@@ -227,14 +227,19 @@ class SigSet():
         self.manifest = manifest
         self.green_idat = green_idat
         self.red_idat = red_idat
+        self.data_channel = None
         
         if not shallow:
             self.load()
         
         LOGGER.info(" - Done init")
 
+    @beartype
     def load(self, debug:bool = False):
         LOGGER.info("load()")
+        if self.data_channel is None:
+            LOGGER.warning("already loaded, skipping")
+            return True
         
         snps_read = {self.green_idat.n_snps_read,
                      self.red_idat.n_snps_read}

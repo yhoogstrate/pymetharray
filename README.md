@@ -13,6 +13,11 @@ Major difference in design philosopy:
 
 ## Installation
 
+prerequisites debian/ubuntu
+```shelll
+$ apt install python3-virtualenv python3-pip
+```
+
 ```shell
 $ git clone https://github.com/yhoogstrate/pymetharray
 $ git checkout -b dev origin/dev

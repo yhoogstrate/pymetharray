@@ -1087,7 +1087,7 @@ class SampleDataContainer(SigSet):
                  pneg_ecdf=False, file_format='csv'):
         LOGGER.debug("__init__")
 
-        self.debug = debug
+        aself.debug = debug
         self.do_noob = do_noob
         self.pval = pval
         self.poobah_decimals = poobah_decimals
@@ -1113,7 +1113,10 @@ class SampleDataContainer(SigSet):
             # these are read from idats directly, not SigSet, so need to be modified at source.
             infer_type_I_probes(self, debug=self.debug)
 
-        super().__init__(self.green_idat, self.red_idat, self.manifest, self.debug)
+        self.data_channel is not None:
+            LOGGER.warning("already loaded, skipping")
+        else:
+            super().__init__(self.green_idat, self.red_idat, self.manifest, self.debug)
         # SigSet defines all probe-subsets, then SampleDataContainer adds them with super(); no need to re-define below.
         # mouse probes are processed within the normals meth/unmeth sets, then split at end of preprocessing step.
         #del self.manifest
